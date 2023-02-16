@@ -1,0 +1,10 @@
+name: harmony
+
+services:
+  centrifugo:
+    image: centrifugo/centrifugo:latest
+    command: centrifugo --config=config.yml
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - "./centrifugo:/centrifugo"
