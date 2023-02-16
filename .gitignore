@@ -1,0 +1,5 @@
+.idea
+.vscode
+
+# Configs
+deploy/centrifugo/config.yml
