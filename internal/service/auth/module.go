@@ -1,7 +1,7 @@
-package mongo
+package authservice
 
 import "go.uber.org/fx"
 
 var Module = fx.Provide(
-	NewDatabase,
+	NewService,
 )

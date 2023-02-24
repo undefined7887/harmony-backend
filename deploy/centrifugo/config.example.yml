@@ -1,0 +1,20 @@
+# Server settings
+address: 0.0.0.0
+port: 8000
+
+# API settings
+api_key: $CENTRIFUGO_API_KEY
+api_handler_prefix: /api
+
+# Client endpoints settings
+websocket_handler_prefix: /api/websocket
+
+# Admin settings
+admin: true
+admin_password: $CENTRIFUGO_ADMIN_PASSWORD
+admin_secret: $CENTRIFUGO_ADMIN_SECRET
+admin_handler_prefix:
+
+# Authentication settings
+token_issuer: harmony
+token_ecdsa_secret_key: $CENTRIFUGO_ECDSA_SECRET_KEY

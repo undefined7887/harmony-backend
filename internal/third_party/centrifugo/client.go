@@ -3,10 +3,10 @@ package centrifugo
 import (
 	"context"
 	"fmt"
+	"github.com/undefined7887/harmony-backend/internal/config"
+	"github.com/undefined7887/harmony-backend/internal/util/http"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/undefined7887/harmony-backend/internal/config"
-	httputil "github.com/undefined7887/harmony-backend/internal/infrastructure/util/http"
 )
 
 type Client struct {

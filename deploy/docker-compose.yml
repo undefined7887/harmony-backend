@@ -7,4 +7,32 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
-      - "./centrifugo:/centrifugo"
+      - "./centrifugo/config.yml:/centrifugo/config.yml"
+
+  mongo:
+    restart: always
+    image: bitnami/mongodb:5.0.6
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+      - MONGODB_REPLICA_SET_MODE=primary
+      - MONGODB_ADVERTISED_HOSTNAME=mongo
+      - MONGODB_ADVERTISED_PORT_NUMBER=27017
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongo-data:/bitnami/mongodb
+
+  harmony:
+    restart: always
+    build:
+      context: ..
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - "./harmony/config.yml:/harmony/config/config.yml"
+      - "./harmony/secrets:/harmony/secrets"
+    depends_on:
+      - mongo
+
+volumes:
+  mongo-data:
