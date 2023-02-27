@@ -15,9 +15,9 @@ type HttpEndpoint interface {
 	Register(c *gin.RouterGroup)
 }
 
-func HttpBindJSON(c *gin.Context, request any) bool {
-	if err := c.BindJSON(request); err != nil {
-		_ = c.AbortWithError(http.StatusBadRequest, err)
+func HttpBindJSON(ctx *gin.Context, request any) bool {
+	if err := ctx.BindJSON(request); err != nil {
+		_ = ctx.AbortWithError(http.StatusBadRequest, err)
 
 		return false
 	}
@@ -25,15 +25,25 @@ func HttpBindJSON(c *gin.Context, request any) bool {
 	return true
 }
 
-func HttpHandleError(c *gin.Context, err error) {
+func HttpBindURI(ctx *gin.Context, request any) bool {
+	if err := ctx.BindUri(request); err != nil {
+		_ = ctx.AbortWithError(http.StatusBadRequest, err)
+
+		return false
+	}
+
+	return true
+}
+
+func HttpHandleError(ctx *gin.Context, err error) {
 	domainErr, ok := err.(*domain.Error)
 	if !ok {
-		_ = c.AbortWithError(http.StatusInternalServerError, err)
+		_ = ctx.AbortWithError(http.StatusInternalServerError, err)
 
 		return
 	}
 
-	c.AbortWithStatusJSON(domainErr.StatusCode, domainErr)
+	ctx.AbortWithStatusJSON(domainErr.StatusCode, domainErr)
 }
 
 type HttpServer struct {

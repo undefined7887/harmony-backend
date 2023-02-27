@@ -2,12 +2,14 @@ package httputil
 
 import (
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
 	"net/http"
 	"strings"
 )
 
 const (
-	KeyClaims = "claims"
+	claimsKey = "claims"
 )
 
 const (
@@ -30,4 +32,12 @@ func GetBearerToken(header string) string {
 	}
 
 	return parts[1]
+}
+
+func SetClaims(ctx *gin.Context, claims *jwt.RegisteredClaims) {
+	ctx.Set(claimsKey, claims)
+}
+
+func GetClaims(ctx *gin.Context) *jwt.RegisteredClaims {
+	return ctx.MustGet(claimsKey).(*jwt.RegisteredClaims)
 }

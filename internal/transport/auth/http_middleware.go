@@ -9,25 +9,25 @@ import (
 )
 
 func NewHttpAuthMiddleware(jwtService *jwtservice.Service) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		token := httputil.GetBearerToken(c.GetHeader(httputil.HeaderAuthorization))
+	return func(ctx *gin.Context) {
+		token := httputil.GetBearerToken(ctx.GetHeader(httputil.HeaderAuthorization))
 
 		if token == "" {
-			c.AbortWithStatus(http.StatusUnauthorized)
+			ctx.AbortWithStatus(http.StatusUnauthorized)
 
 			return
 		}
 
 		claims, err := jwtService.Parse(token, &jwt.RegisteredClaims{})
 		if err != nil {
-			_ = c.AbortWithError(http.StatusUnauthorized, err)
+			_ = ctx.AbortWithError(http.StatusUnauthorized, err)
 
 			return
 		}
 
-		c.Set(httputil.KeyClaims, claims)
+		httputil.SetClaims(ctx, claims.(*jwt.RegisteredClaims))
 
 		// Calling next middleware
-		c.Next()
+		ctx.Next()
 	}
 }

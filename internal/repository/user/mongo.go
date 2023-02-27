@@ -54,7 +54,7 @@ func (m *MongoRepository) Read(ctx context.Context, id string) (*userdomain.User
 	return mongodatabase.
 		NewCollectionQuery[userdomain.User](m.database.Collection(userCollection)).
 		FindOne(ctx, bson.M{
-			"id": id,
+			"_id": id,
 		})
 }
 

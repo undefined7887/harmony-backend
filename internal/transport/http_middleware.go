@@ -9,18 +9,18 @@ import (
 )
 
 func NewHttpLoggerMiddleware(logger *zap.Logger) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Next()
+	return func(ctx *gin.Context) {
+		ctx.Next()
 
 		logger := logger.With(
-			zap.String("method", c.Request.Method),
-			zap.String("url", c.Request.URL.String()),
-			zap.String("status", httputil.FullStatus(c.Writer.Status())),
+			zap.String("method", ctx.Request.Method),
+			zap.String("url", ctx.Request.URL.String()),
+			zap.String("status", httputil.FullStatus(ctx.Writer.Status())),
 		)
 
-		switch c.Writer.Status() {
+		switch ctx.Writer.Status() {
 		case http.StatusInternalServerError:
-			logger.Error("request processing error", zap.Errors("errors", toErrorsSlice(c.Errors)))
+			logger.Error("request processing error", zap.Errors("errors", toErrorsSlice(ctx.Errors)))
 
 		default:
 			logger.Info("request processed")

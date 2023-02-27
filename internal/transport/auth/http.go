@@ -35,21 +35,21 @@ type SignUpRequest struct {
 	Nickname string `json:"nickname" binding:"nickname"`
 }
 
-func (e *HttpEndpoint) googleSignUp(c *gin.Context) {
+func (e *HttpEndpoint) googleSignUp(ctx *gin.Context) {
 	request := SignUpRequest{}
 
-	if !transport.HttpBindJSON(c, &request) {
+	if !transport.HttpBindJSON(ctx, &request) {
 		return
 	}
 
-	token, err := e.service.GoogleSignUp(c, request.Idtoken, request.Nickname)
+	token, err := e.service.GoogleSignUp(ctx, request.Idtoken, request.Nickname)
 	if err != nil {
-		transport.HttpHandleError(c, err)
+		transport.HttpHandleError(ctx, err)
 
 		return
 	}
 
-	c.JSON(http.StatusOK, AuthResponse{
+	ctx.JSON(http.StatusOK, AuthResponse{
 		Token: token,
 	})
 }
@@ -58,23 +58,21 @@ type SignInRequest struct {
 	Idtoken string `json:"idtoken" binding:"jwt"`
 }
 
-func (e *HttpEndpoint) googleSignIn(c *gin.Context) {
+func (e *HttpEndpoint) googleSignIn(ctx *gin.Context) {
 	request := SignInRequest{}
 
-	if err := c.BindJSON(&request); err != nil {
-		_ = c.AbortWithError(http.StatusBadRequest, err)
-
+	if !transport.HttpBindJSON(ctx, &request) {
 		return
 	}
 
-	token, err := e.service.GoogleSignIn(c, request.Idtoken)
+	token, err := e.service.GoogleSignIn(ctx, request.Idtoken)
 	if err != nil {
-		transport.HttpHandleError(c, err)
+		transport.HttpHandleError(ctx, err)
 
 		return
 	}
 
-	c.JSON(http.StatusOK, AuthResponse{
+	ctx.JSON(http.StatusOK, AuthResponse{
 		Token: token,
 	})
 }

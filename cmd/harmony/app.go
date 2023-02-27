@@ -7,10 +7,12 @@ import (
 	userrepo "github.com/undefined7887/harmony-backend/internal/repository/user"
 	"github.com/undefined7887/harmony-backend/internal/service/auth"
 	"github.com/undefined7887/harmony-backend/internal/service/jwt"
+	userservice "github.com/undefined7887/harmony-backend/internal/service/user"
 	"github.com/undefined7887/harmony-backend/internal/third_party/centrifugo"
 	"github.com/undefined7887/harmony-backend/internal/third_party/google"
 	"github.com/undefined7887/harmony-backend/internal/transport"
 	"github.com/undefined7887/harmony-backend/internal/transport/auth"
+	usertransport "github.com/undefined7887/harmony-backend/internal/transport/user"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
 	"os"
@@ -36,10 +38,12 @@ func NewApp() *fx.App {
 		// Services
 		jwtservice.Module,
 		authservice.Module,
+		userservice.Module,
 
 		// Transport
 		transport.Module,
 		authtransport.Module,
+		usertransport.Module,
 	)
 }
 

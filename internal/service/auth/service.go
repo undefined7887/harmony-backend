@@ -2,6 +2,7 @@ package authservice
 
 import (
 	"context"
+	"fmt"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/undefined7887/harmony-backend/internal/domain/auth"
@@ -9,7 +10,13 @@ import (
 	jwtservice "github.com/undefined7887/harmony-backend/internal/service/jwt"
 	"github.com/undefined7887/harmony-backend/internal/third_party/google"
 	"github.com/undefined7887/harmony-backend/internal/util/crypto"
+	randutil "github.com/undefined7887/harmony-backend/internal/util/rand"
 	"time"
+)
+
+const (
+	MinNicknameTag = 1000
+	MaxNicknameTag = 9999
 )
 
 type Service struct {
@@ -45,7 +52,7 @@ func (s *Service) GoogleSignUp(ctx context.Context, idtoken, nickname string) (s
 		ID:        uuid.NewString(),
 		Email:     claims.Email,
 		Photo:     claims.Picture,
-		Nickname:  nickname,
+		Nickname:  fmt.Sprintf("%s#%d", nickname, randutil.RandomNumber(MinNicknameTag, MaxNicknameTag)),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
@@ -56,7 +63,7 @@ func (s *Service) GoogleSignUp(ctx context.Context, idtoken, nickname string) (s
 	}
 
 	if !inserted {
-		return "", authdomain.ErrUserAlreadyExists()
+		return "", userdomain.ErrUserAlreadyExists()
 	}
 
 	return s.jwtService.Create(jwt.RegisteredClaims{
@@ -82,7 +89,7 @@ func (s *Service) GoogleSignIn(ctx context.Context, idtoken string) (string, err
 	}
 
 	if user == nil {
-		return "", authdomain.ErrUserNotFound()
+		return "", userdomain.ErrUserNotFound()
 	}
 
 	return s.jwtService.Create(jwt.RegisteredClaims{
