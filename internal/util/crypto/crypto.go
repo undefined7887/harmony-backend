@@ -48,6 +48,20 @@ func ReadPrivateKey(path string) (crypto.Signer, error) {
 	return privateKey.(crypto.Signer), nil
 }
 
+func WritePublicKey(path string, key any) error {
+	publicKeyDer, err := x509.MarshalPKIXPublicKey(key)
+	if err != nil {
+		return err
+	}
+
+	publicKeyPem := pem.EncodeToMemory(&pem.Block{
+		Type:  "PUBLIC KEY",
+		Bytes: publicKeyDer,
+	})
+
+	return os.WriteFile(path, publicKeyPem, os.ModePerm)
+}
+
 func WritePrivateKey(path string, key any) error {
 	privateKeyDer, err := x509.MarshalPKCS8PrivateKey(key)
 	if err != nil {

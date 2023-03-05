@@ -69,7 +69,7 @@ func (h *Service) Parse(token string, claims jwt.Claims) (jwt.Claims, error) {
 		return h.privateKey.Public(), nil
 	})
 
-	if !parsedToken.Valid {
+	if err != nil || !parsedToken.Valid {
 		return nil, err
 	}
 

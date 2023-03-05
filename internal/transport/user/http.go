@@ -2,12 +2,10 @@ package usertransport
 
 import (
 	"github.com/gin-gonic/gin"
-	userdomain "github.com/undefined7887/harmony-backend/internal/domain/user"
 	jwtservice "github.com/undefined7887/harmony-backend/internal/service/jwt"
 	userservice "github.com/undefined7887/harmony-backend/internal/service/user"
 	"github.com/undefined7887/harmony-backend/internal/transport"
 	authtransport "github.com/undefined7887/harmony-backend/internal/transport/auth"
-	httputil "github.com/undefined7887/harmony-backend/internal/util/http"
 	"net/http"
 )
 
@@ -32,42 +30,31 @@ func (e *HttpEndpoint) Register(group *gin.RouterGroup) {
 		Group("/user").
 		Use(authtransport.NewHttpAuthMiddleware(e.jwtService))
 	{
-		userGroup.GET("/:id", e.get)
+		userGroup.GET("/:id", e.read)
 	}
 }
 
-type GetRequest struct {
-	ID string `uri:"id" binding:"uuid|eq=self"`
+type ReadParams struct {
+	ID string `uri:"id" binding:"uuid4|eq=self"`
 }
 
-func (r *GetRequest) Process(ctx *gin.Context) {
-	if r.ID == SelfKeyword {
-		r.ID = httputil.GetClaims(ctx).Subject
-	}
-}
+func (e *HttpEndpoint) read(ctx *gin.Context) {
+	var params ReadParams
 
-type GetResponse struct {
-	User *userdomain.UserDTO `json:"user"`
-}
-
-func (e *HttpEndpoint) get(ctx *gin.Context) {
-	request := GetRequest{}
-
-	if !transport.HttpBindURI(ctx, &request) {
+	if !transport.HttpBindURI(ctx, &params) {
 		return
 	}
 
-	// Processing all possible values of id
-	request.Process(ctx)
+	if params.ID == SelfKeyword {
+		params.ID = authtransport.GetClaims(ctx).Subject
+	}
 
-	user, err := e.service.Get(ctx, request.ID)
+	user, err := e.service.Read(ctx, params.ID)
 	if err != nil {
 		transport.HttpHandleError(ctx, err)
 
 		return
 	}
 
-	ctx.JSON(http.StatusOK, GetResponse{
-		User: user.DTO(),
-	})
+	ctx.JSON(http.StatusOK, user.UserProfileDTO())
 }

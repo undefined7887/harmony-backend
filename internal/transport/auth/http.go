@@ -30,19 +30,19 @@ type AuthResponse struct {
 	Token string `json:"token"`
 }
 
-type SignUpRequest struct {
+type SignUpBody struct {
 	Idtoken  string `json:"idtoken" binding:"jwt"`
 	Nickname string `json:"nickname" binding:"nickname"`
 }
 
 func (e *HttpEndpoint) googleSignUp(ctx *gin.Context) {
-	request := SignUpRequest{}
+	var body SignUpBody
 
-	if !transport.HttpBindJSON(ctx, &request) {
+	if !transport.HttpBindJSON(ctx, &body) {
 		return
 	}
 
-	token, err := e.service.GoogleSignUp(ctx, request.Idtoken, request.Nickname)
+	token, err := e.service.GoogleSignUp(ctx, body.Idtoken, body.Nickname)
 	if err != nil {
 		transport.HttpHandleError(ctx, err)
 
@@ -54,18 +54,18 @@ func (e *HttpEndpoint) googleSignUp(ctx *gin.Context) {
 	})
 }
 
-type SignInRequest struct {
+type SignInBody struct {
 	Idtoken string `json:"idtoken" binding:"jwt"`
 }
 
 func (e *HttpEndpoint) googleSignIn(ctx *gin.Context) {
-	request := SignInRequest{}
+	var body SignInBody
 
-	if !transport.HttpBindJSON(ctx, &request) {
+	if !transport.HttpBindJSON(ctx, &body) {
 		return
 	}
 
-	token, err := e.service.GoogleSignIn(ctx, request.Idtoken)
+	token, err := e.service.GoogleSignIn(ctx, body.Idtoken)
 	if err != nil {
 		transport.HttpHandleError(ctx, err)
 

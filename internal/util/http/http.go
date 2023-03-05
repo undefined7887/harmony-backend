@@ -2,18 +2,14 @@ package httputil
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v4"
 	"net/http"
 	"strings"
 )
 
 const (
-	claimsKey = "claims"
-)
-
-const (
 	HeaderAuthorization = "Authorization"
+
+	HeaderXRequestID = "X-Request-ID"
 )
 
 func FullStatus(statusCode int) string {
@@ -32,12 +28,4 @@ func GetBearerToken(header string) string {
 	}
 
 	return parts[1]
-}
-
-func SetClaims(ctx *gin.Context, claims *jwt.RegisteredClaims) {
-	ctx.Set(claimsKey, claims)
-}
-
-func GetClaims(ctx *gin.Context) *jwt.RegisteredClaims {
-	return ctx.MustGet(claimsKey).(*jwt.RegisteredClaims)
 }

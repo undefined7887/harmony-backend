@@ -6,19 +6,19 @@ import (
 )
 
 type Service struct {
-	repository userdomain.Repository
+	userRepository userdomain.Repository
 }
 
 func NewService(
-	repository userdomain.Repository,
+	userRepository userdomain.Repository,
 ) *Service {
 	return &Service{
-		repository: repository,
+		userRepository: userRepository,
 	}
 }
 
-func (s *Service) Get(ctx context.Context, id string) (*userdomain.User, error) {
-	user, err := s.repository.Read(ctx, id)
+func (s *Service) Read(ctx context.Context, id string) (*userdomain.User, error) {
+	user, err := s.userRepository.Read(ctx, id)
 	if err != nil {
 		return nil, err
 	}

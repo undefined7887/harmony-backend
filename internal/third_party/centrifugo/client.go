@@ -39,32 +39,33 @@ type PublishResponse struct {
 	Epoch  string `json:"epoch"`
 }
 
-func (c *Client) Publish(ctx context.Context, req *PublishRequest) (*PublishResponse, error) {
+func (c *Client) Publish(ctx context.Context, channel string, data any) (*PublishResponse, error) {
 	resp, err := c.client.R().
 		SetContext(ctx).
-		SetBody(&request[*PublishRequest]{
+		SetBody(&request[PublishRequest]{
 			Method: publishMethod,
-			Params: req,
+			Params: PublishRequest{
+				Channel: channel,
+				Data:    data,
+			},
 		}).
-		SetResult(&response[*PublishResponse]{}).
+		SetResult(&response[PublishResponse]{}).
 		Post("")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("centrifugo: %v", err)
 	}
 
-	result, err := handleResponse[*PublishResponse](resp)
+	result, err := handleResponse[PublishResponse](resp)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("centrifugo: %v", err)
 	}
 
 	return result, nil
 }
 
-func handleResponse[R any](resp *resty.Response) (R, error) {
-	var rr R
-
+func handleResponse[R any](resp *resty.Response) (*R, error) {
 	if resp.IsError() {
-		return rr, &HttpError{
+		return nil, &HttpError{
 			StatusCode: resp.StatusCode(),
 		}
 	}
@@ -73,11 +74,11 @@ func handleResponse[R any](resp *resty.Response) (R, error) {
 
 	// Centrifugo can send errors with '200 OK' status
 	if result.Error.Code > 0 {
-		return rr, &ApiError{
+		return nil, &ApiError{
 			Code:    result.Error.Code,
 			Message: result.Error.Message,
 		}
 	}
 
-	return result.Result, nil
+	return &result.Result, nil
 }

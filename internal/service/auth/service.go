@@ -54,7 +54,6 @@ func (s *Service) GoogleSignUp(ctx context.Context, idtoken, nickname string) (s
 		Photo:     claims.Picture,
 		Nickname:  fmt.Sprintf("%s#%d", nickname, randutil.RandomNumber(MinNicknameTag, MaxNicknameTag)),
 		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
 	}
 
 	inserted, err := s.userRepository.Create(ctx, user)
@@ -66,14 +65,16 @@ func (s *Service) GoogleSignUp(ctx context.Context, idtoken, nickname string) (s
 		return "", userdomain.ErrUserAlreadyExists()
 	}
 
-	return s.jwtService.Create(jwt.RegisteredClaims{
-		ID: cryptoutil.Token(),
+	return s.jwtService.Create(authdomain.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			ID: cryptoutil.Token(),
 
-		Issuer:  s.jwtService.Issuer(),
-		Subject: user.ID,
+			Issuer:  s.jwtService.Issuer(),
+			Subject: user.ID,
 
-		IssuedAt:  s.jwtService.IssuedAt(),
-		ExpiresAt: s.jwtService.ExpireAt(),
+			IssuedAt:  s.jwtService.IssuedAt(),
+			ExpiresAt: s.jwtService.ExpireAt(),
+		},
 	}), nil
 }
 
@@ -92,13 +93,15 @@ func (s *Service) GoogleSignIn(ctx context.Context, idtoken string) (string, err
 		return "", userdomain.ErrUserNotFound()
 	}
 
-	return s.jwtService.Create(jwt.RegisteredClaims{
-		ID: cryptoutil.Token(),
+	return s.jwtService.Create(authdomain.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			ID: cryptoutil.Token(),
 
-		Issuer:  s.jwtService.Issuer(),
-		Subject: user.ID,
+			Issuer:  s.jwtService.Issuer(),
+			Subject: user.ID,
 
-		IssuedAt:  s.jwtService.IssuedAt(),
-		ExpiresAt: s.jwtService.ExpireAt(),
+			IssuedAt:  s.jwtService.IssuedAt(),
+			ExpiresAt: s.jwtService.ExpireAt(),
+		},
 	}), nil
 }

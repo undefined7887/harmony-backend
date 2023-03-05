@@ -33,10 +33,11 @@ func NewMongoMigrationsRunner(lifecycle fx.Lifecycle, logger *zap.Logger, databa
 
 			return multierr.Combine(
 				mongodatabase.
-					NewCollectionQuery[any](database.Collection(userCollection)).
+					Q[any](database.Collection(userCollection)).
 					BuildIndex(ctx,
 						mongodatabase.IndexKeys("email"),
-						options.Index().
+						options.
+							Index().
 							SetUnique(true),
 					),
 			)
@@ -46,13 +47,13 @@ func NewMongoMigrationsRunner(lifecycle fx.Lifecycle, logger *zap.Logger, databa
 
 func (m *MongoRepository) Create(ctx context.Context, user *userdomain.User) (bool, error) {
 	return mongodatabase.
-		NewCollectionQuery[userdomain.User](m.database.Collection(userCollection)).
+		Q[userdomain.User](m.database.Collection(userCollection)).
 		InsertOne(ctx, user)
 }
 
 func (m *MongoRepository) Read(ctx context.Context, id string) (*userdomain.User, error) {
 	return mongodatabase.
-		NewCollectionQuery[userdomain.User](m.database.Collection(userCollection)).
+		Q[userdomain.User](m.database.Collection(userCollection)).
 		FindOne(ctx, bson.M{
 			"_id": id,
 		})
@@ -60,8 +61,16 @@ func (m *MongoRepository) Read(ctx context.Context, id string) (*userdomain.User
 
 func (m *MongoRepository) ReadByEmail(ctx context.Context, email string) (*userdomain.User, error) {
 	return mongodatabase.
-		NewCollectionQuery[userdomain.User](m.database.Collection(userCollection)).
+		Q[userdomain.User](m.database.Collection(userCollection)).
 		FindOne(ctx, bson.M{
 			"email": email,
+		})
+}
+
+func (m *MongoRepository) Exists(ctx context.Context, id string) (bool, error) {
+	return mongodatabase.
+		Q[userdomain.User](m.database.Collection(userCollection)).
+		Exists(ctx, bson.M{
+			"_id": id,
 		})
 }

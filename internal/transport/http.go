@@ -15,10 +15,16 @@ type HttpEndpoint interface {
 	Register(c *gin.RouterGroup)
 }
 
-func HttpBindJSON(ctx *gin.Context, request any) bool {
-	if err := ctx.BindJSON(request); err != nil {
-		_ = ctx.AbortWithError(http.StatusBadRequest, err)
+func HttpBind(ctx *gin.Context, params, request, query any) bool {
+	if params != nil && !HttpBindURI(ctx, params) {
+		return false
+	}
 
+	if request != nil && !HttpBindJSON(ctx, request) {
+		return false
+	}
+
+	if query != nil && !HttpBindQuery(ctx, query) {
 		return false
 	}
 
@@ -26,8 +32,28 @@ func HttpBindJSON(ctx *gin.Context, request any) bool {
 }
 
 func HttpBindURI(ctx *gin.Context, request any) bool {
-	if err := ctx.BindUri(request); err != nil {
-		_ = ctx.AbortWithError(http.StatusBadRequest, err)
+	if err := ctx.ShouldBindUri(request); err != nil {
+		HttpHandleError(ctx, domain.ErrBadRequest(err))
+
+		return false
+	}
+
+	return true
+}
+
+func HttpBindJSON(ctx *gin.Context, request any) bool {
+	if err := ctx.ShouldBindJSON(request); err != nil {
+		HttpHandleError(ctx, domain.ErrBadRequest(err))
+
+		return false
+	}
+
+	return true
+}
+
+func HttpBindQuery(ctx *gin.Context, request any) bool {
+	if err := ctx.ShouldBindQuery(request); err != nil {
+		HttpHandleError(ctx, domain.ErrBadRequest(err))
 
 		return false
 	}

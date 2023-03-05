@@ -1,6 +1,8 @@
 package userdomain
 
-import "time"
+import (
+	"time"
+)
 
 type User struct {
 	ID string `bson:"_id"`
@@ -9,14 +11,13 @@ type User struct {
 	Photo    string `bson:"photo"`
 	Nickname string `bson:"nickname"`
 
-	CreatedAt time.Time `bson:"created_at"`
-	UpdatedAt time.Time `bson:"updated_at"`
+	CreatedAt time.Time  `bson:"created_at"`
+	UpdatedAt *time.Time `bson:"updated_at,omitempty"`
 }
 
-func (p *User) DTO() *UserDTO {
-	return &UserDTO{
-		ID: p.ID,
-
+func (p *User) UserProfileDTO() *UserProfileDTO {
+	return &UserProfileDTO{
+		ID:       p.ID,
 		Photo:    p.Photo,
 		Nickname: p.Nickname,
 	}
