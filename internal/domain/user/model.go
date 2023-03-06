@@ -15,8 +15,8 @@ type User struct {
 	UpdatedAt *time.Time `bson:"updated_at,omitempty"`
 }
 
-func (p *User) UserProfileDTO() *UserProfileDTO {
-	return &UserProfileDTO{
+func (p *User) DTO() *UserDTO {
+	return &UserDTO{
 		ID:       p.ID,
 		Photo:    p.Photo,
 		Nickname: p.Nickname,

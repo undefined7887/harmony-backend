@@ -19,3 +19,9 @@ type TypingDTO struct {
 	PeerType string `json:"peer_type"`
 	Typing   bool   `json:"typing"`
 }
+
+type ReadDTO struct {
+	UserID   string `json:"user_id"`
+	PeerID   string `json:"peer_id"`
+	PeerType string `json:"peer_type"`
+}

@@ -20,8 +20,8 @@ type Repository interface {
 	) ([]Message, error)
 
 	// Update updates single message contents
-	Update(ctx context.Context, id, userID, text string) (*Message, error)
+	Update(ctx context.Context, userID, peerHash, id, text string) (*Message, error)
 
 	// UpdateRead special function to set read status to true for all messages in chat
-	UpdateRead(ctx context.Context, userID string, peerHash string) (int64, error)
+	UpdateRead(ctx context.Context, userID, peerHash string) (int64, error)
 }

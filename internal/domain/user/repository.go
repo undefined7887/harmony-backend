@@ -7,6 +7,7 @@ type Repository interface {
 
 	Read(ctx context.Context, id string) (*User, error)
 	ReadByEmail(ctx context.Context, email string) (*User, error)
+	ReadByNickname(ctx context.Context, nickname string) (*User, error)
 
 	Exists(ctx context.Context, id string) (bool, error)
 }

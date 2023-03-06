@@ -28,23 +28,19 @@ func (e *HttpEndpoint) Register(group *gin.RouterGroup) {
 		Group("/chat").
 		Use(authtransport.NewHttpAuthMiddleware(e.jwtService))
 	{
-		// Message creation
 		chatGroup.POST("/:peer_type/:peer_id", e.createMessage)
-		chatGroup.POST("/:peer_type/:peer_id/typing", e.updateTyping)
 
-		// Message listing
-		chatGroup.GET("", e.listMessages)
+		chatGroup.GET("", e.listMessages) // replace function by listChats
 		chatGroup.GET("/:peer_type", e.listMessages)
 		chatGroup.GET("/:peer_type/:peer_id", e.listMessages)
 
-		// Message updating
-		chatGroup.PUT("/message/:id", e.updateMessage)
-
-		// Message deleting
-		chatGroup.DELETE("/message/:id", e.deleteMessage)
+		chatGroup.PUT("/:peer_type/:peer_id/:id", e.updateMessage)
+		chatGroup.PUT("/:peer_type/:peer_id/read", e.readMessages)
+		chatGroup.PUT("/:peer_type/:peer_id/typing", e.updateTyping)
 	}
 }
 
+// PeerParams common struct for peer_type, peer_id
 type PeerParams struct {
 	PeerID   string `uri:"peer_id" binding:"uuid4"`
 	PeerType string `uri:"peer_type" binding:"oneof=user group"`
@@ -107,12 +103,12 @@ func (e *HttpEndpoint) updateTyping(ctx *gin.Context) {
 	ctx.Status(http.StatusNoContent)
 }
 
-type PeerParamsOmitempty struct {
+type ListMessagesParams struct {
 	PeerID   string `uri:"peer_id" binding:"omitempty,uuid4"`
 	PeerType string `uri:"peer_type" binding:"omitempty,oneof=user group"`
 }
 
-type PaginationQuery struct {
+type ListMessagesQuery struct {
 	Offset int64 `form:"offset" binding:"min=0"`
 	Limit  int64 `form:"limit,default=100" binding:"min=1"`
 }
@@ -123,8 +119,8 @@ type ListMessagesResponse struct {
 
 func (e *HttpEndpoint) listMessages(ctx *gin.Context) {
 	var (
-		params PeerParamsOmitempty
-		query  PaginationQuery
+		params ListMessagesParams
+		query  ListMessagesQuery
 	)
 
 	if !transport.HttpBind(ctx, &params, nil, &query) {
@@ -176,7 +172,9 @@ func (e *HttpEndpoint) listMessages(ctx *gin.Context) {
 	})
 }
 
-type MessageParamID struct {
+type UpdateMessageParams struct {
+	PeerParams
+
 	ID string `uri:"id" binding:"uuid4"`
 }
 
@@ -186,7 +184,7 @@ type UpdateMessageBody struct {
 
 func (e *HttpEndpoint) updateMessage(ctx *gin.Context) {
 	var (
-		params MessageParamID
+		params UpdateMessageParams
 		body   UpdateMessageBody
 	)
 
@@ -196,7 +194,15 @@ func (e *HttpEndpoint) updateMessage(ctx *gin.Context) {
 
 	userID := authtransport.GetClaims(ctx).Subject
 
-	if _, err := e.service.UpdateMessage(ctx, userID, params.ID, body.Text); err != nil {
+	_, err := e.service.UpdateMessage(
+		ctx,
+		userID,
+		params.PeerID,
+		params.PeerType,
+		params.ID,
+		body.Text,
+	)
+	if err != nil {
 		transport.HttpHandleError(ctx, err)
 
 		return
@@ -205,20 +211,20 @@ func (e *HttpEndpoint) updateMessage(ctx *gin.Context) {
 	ctx.Status(http.StatusNoContent)
 }
 
-func (e *HttpEndpoint) deleteMessage(ctx *gin.Context) {
-	params := MessageParamID{}
+func (e *HttpEndpoint) readMessages(ctx *gin.Context) {
+	var params PeerParams
 
 	if !transport.HttpBindURI(ctx, &params) {
 		return
 	}
 
-	//userID := authtransport.GetClaims(ctx).Subject
-	//
-	//if _, err := e.service.UpdateMessage(ctx, userID, params.ID, request.Text); err != nil {
-	//	transport.HttpHandleError(ctx, err)
-	//
-	//	return
-	//}
+	userID := authtransport.GetClaims(ctx).Subject
 
-	ctx.Status(http.StatusNotImplemented)
+	if err := e.service.ReadMessages(ctx, userID, params.PeerID, params.PeerType); err != nil {
+		transport.HttpHandleError(ctx, err)
+
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
 }

@@ -120,13 +120,15 @@ func (m *MongoRepository) ListRecent(ctx context.Context, userID, peerType strin
 		})
 }
 
-func (m *MongoRepository) Update(ctx context.Context, id, userID, text string) (*chatdomain.Message, error) {
+func (m *MongoRepository) Update(ctx context.Context, userID, peerHash, id, text string) (*chatdomain.Message, error) {
 	return mongodatabase.
 		Q[chatdomain.Message](m.database.Collection(messageCollection)).
 		FindOneAndUpdate(ctx,
 			bson.M{
-				"_id":     id,
-				"user_id": userID,
+				"_id": id,
+
+				"user_id":   userID,
+				"peer_hash": peerHash,
 
 				// Do not include deleted messages
 				"deleted_at": nil,
@@ -150,6 +152,9 @@ func (m *MongoRepository) UpdateRead(ctx context.Context, userID, peerHash strin
 			bson.M{
 				"user_id":   userID,
 				"peer_hash": peerHash,
+
+				// Do not update already read messages
+				"read": false,
 
 				// Do not include deleted messages
 				"deleted_at": nil,

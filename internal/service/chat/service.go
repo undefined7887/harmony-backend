@@ -106,8 +106,10 @@ func (s *Service) ListRecentMessages(
 	return messages, nil
 }
 
-func (s *Service) UpdateMessage(ctx context.Context, userID string, id, text string) (*chatdomain.Message, error) {
-	updatedMessage, err := s.chatRepository.Update(ctx, id, userID, text)
+func (s *Service) UpdateMessage(ctx context.Context, userID, peerID, peerType string, id, text string) (*chatdomain.Message, error) {
+	peerHash := chatdomain.CalculatePeerHash(userID, peerID, peerType)
+
+	updatedMessage, err := s.chatRepository.Update(ctx, userID, peerHash, id, text)
 	if err != nil {
 		return nil, err
 	}
@@ -129,6 +131,35 @@ func (s *Service) UpdateMessage(ctx context.Context, userID string, id, text str
 	}
 
 	return updatedMessage, nil
+}
+
+func (s *Service) ReadMessages(ctx context.Context, userID, peerID, peerType string) error {
+	count, err := s.chatRepository.UpdateRead(ctx, userID, chatdomain.CalculatePeerHash(userID, peerID, peerType))
+	if err != nil {
+		return err
+	}
+
+	if count == 0 {
+		return chatdomain.ErrMessageNotFound()
+	}
+
+	switch peerType {
+	case chatdomain.MessagePeerTypeUser:
+		_, err := s.centrifugoClient.
+			Publish(ctx, chatdomain.ChannelReadMessage(peerID), chatdomain.ReadDTO{
+				UserID:   userID,
+				PeerID:   peerID,
+				PeerType: peerType,
+			})
+		if err != nil {
+			return err
+		}
+
+	default:
+		return domain.ErrNotImplemented()
+	}
+
+	return nil
 }
 
 func (s *Service) UpdateTyping(ctx context.Context, userID, peerID, peerType string, typing bool) error {

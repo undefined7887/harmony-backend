@@ -1,6 +1,6 @@
 package userdomain
 
-type UserProfileDTO struct {
+type UserDTO struct {
 	ID       string `json:"id"`
 	Photo    string `json:"photo"`
 	Nickname string `json:"nickname"`

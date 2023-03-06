@@ -31,6 +31,7 @@ func (e *HttpEndpoint) Register(group *gin.RouterGroup) {
 		Use(authtransport.NewHttpAuthMiddleware(e.jwtService))
 	{
 		userGroup.GET("/:id", e.read)
+		userGroup.GET("/nickname", e.readByNickname)
 	}
 }
 
@@ -56,5 +57,26 @@ func (e *HttpEndpoint) read(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, user.UserProfileDTO())
+	ctx.JSON(http.StatusOK, user.DTO())
+}
+
+type ReadByNicknameBody struct {
+	Nickname string `json:"nickname" binding:"nickname-extended"`
+}
+
+func (e *HttpEndpoint) readByNickname(ctx *gin.Context) {
+	var params ReadByNicknameBody
+
+	if !transport.HttpBindJSON(ctx, &params) {
+		return
+	}
+
+	user, err := e.service.ReadByNickname(ctx, params.Nickname)
+	if err != nil {
+		transport.HttpHandleError(ctx, err)
+
+		return
+	}
+
+	ctx.JSON(http.StatusOK, user.DTO())
 }

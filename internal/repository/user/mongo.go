@@ -67,6 +67,14 @@ func (m *MongoRepository) ReadByEmail(ctx context.Context, email string) (*userd
 		})
 }
 
+func (m *MongoRepository) ReadByNickname(ctx context.Context, nickname string) (*userdomain.User, error) {
+	return mongodatabase.
+		Q[userdomain.User](m.database.Collection(userCollection)).
+		FindOne(ctx, bson.M{
+			"nickname": nickname,
+		})
+}
+
 func (m *MongoRepository) Exists(ctx context.Context, id string) (bool, error) {
 	return mongodatabase.
 		Q[userdomain.User](m.database.Collection(userCollection)).

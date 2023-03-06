@@ -12,4 +12,8 @@ func init() {
 	if err := engine.RegisterValidation(NicknameTag, validateNickname); err != nil {
 		panic(fmt.Sprintf("validation: unexpected \"nickname\" registration error: %v", err))
 	}
+
+	if err := engine.RegisterValidation(NicknameExtendedTag, validateNicknameExtended); err != nil {
+		panic(fmt.Sprintf("validation: unexpected \"nickname-extended\" registration error: %v", err))
+	}
 }
