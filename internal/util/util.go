@@ -5,10 +5,14 @@ import (
 	"sort"
 )
 
-func SortSequence[T constraints.Ordered](values ...T) []T {
+func Sort[T constraints.Ordered](values []T) {
 	sort.Slice(values, func(i, j int) bool {
 		return values[i] < values[j]
 	})
+}
 
-	return values
+func SortSequence[T constraints.Ordered](values ...T) {
+	sort.Slice(values, func(i, j int) bool {
+		return values[i] < values[j]
+	})
 }

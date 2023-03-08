@@ -15,12 +15,12 @@ type HttpEndpoint interface {
 	Register(c *gin.RouterGroup)
 }
 
-func HttpBind(ctx *gin.Context, params, request, query any) bool {
+func HttpBind(ctx *gin.Context, params, body, query any) bool {
 	if params != nil && !HttpBindURI(ctx, params) {
 		return false
 	}
 
-	if request != nil && !HttpBindJSON(ctx, request) {
+	if body != nil && !HttpBindJSON(ctx, body) {
 		return false
 	}
 

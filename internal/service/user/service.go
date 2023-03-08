@@ -17,8 +17,8 @@ func NewService(
 	}
 }
 
-func (s *Service) Read(ctx context.Context, id string) (*userdomain.User, error) {
-	user, err := s.userRepository.Read(ctx, id)
+func (s *Service) GetUser(ctx context.Context, id string) (*userdomain.User, error) {
+	user, err := s.userRepository.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -30,8 +30,8 @@ func (s *Service) Read(ctx context.Context, id string) (*userdomain.User, error)
 	return user, nil
 }
 
-func (s *Service) ReadByNickname(ctx context.Context, nickname string) (*userdomain.User, error) {
-	user, err := s.userRepository.ReadByNickname(ctx, nickname)
+func (s *Service) GetUserByNickname(ctx context.Context, nickname string) (*userdomain.User, error) {
+	user, err := s.userRepository.GetByNickname(ctx, nickname)
 	if err != nil {
 		return nil, err
 	}

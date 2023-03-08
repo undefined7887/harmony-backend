@@ -10,10 +10,14 @@ func init() {
 	engine := binding.Validator.Engine().(*validator.Validate)
 
 	if err := engine.RegisterValidation(NicknameTag, validateNickname); err != nil {
-		panic(fmt.Sprintf("validation: unexpected \"nickname\" registration error: %v", err))
+		panic(fmt.Sprintf("validation: unexpected \"%s\" registration error: %v", NicknameTag, err))
 	}
 
 	if err := engine.RegisterValidation(NicknameExtendedTag, validateNicknameExtended); err != nil {
-		panic(fmt.Sprintf("validation: unexpected \"nickname-extended\" registration error: %v", err))
+		panic(fmt.Sprintf("validation: unexpected \"%s\" registration error: %v", NicknameExtendedTag, err))
+	}
+
+	if err := engine.RegisterValidation(IdTag, validateID); err != nil {
+		panic(fmt.Sprintf("validation: unexpected \"%s\" registration error: %v", IdTag, err))
 	}
 }

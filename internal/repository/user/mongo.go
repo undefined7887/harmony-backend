@@ -33,7 +33,7 @@ func NewMongoMigrationsRunner(lifecycle fx.Lifecycle, logger *zap.Logger, databa
 
 			return multierr.Combine(
 				mongodatabase.
-					Q[any](database.Collection(userCollection)).
+					NewQuery[any](database.Collection(userCollection)).
 					BuildIndex(ctx,
 						mongodatabase.IndexKeys("email"),
 						options.
@@ -47,29 +47,29 @@ func NewMongoMigrationsRunner(lifecycle fx.Lifecycle, logger *zap.Logger, databa
 
 func (m *MongoRepository) Create(ctx context.Context, user *userdomain.User) (bool, error) {
 	return mongodatabase.
-		Q[userdomain.User](m.database.Collection(userCollection)).
+		NewQuery[userdomain.User](m.database.Collection(userCollection)).
 		InsertOne(ctx, user)
 }
 
-func (m *MongoRepository) Read(ctx context.Context, id string) (*userdomain.User, error) {
+func (m *MongoRepository) Get(ctx context.Context, id string) (*userdomain.User, error) {
 	return mongodatabase.
-		Q[userdomain.User](m.database.Collection(userCollection)).
+		NewQuery[userdomain.User](m.database.Collection(userCollection)).
 		FindOne(ctx, bson.M{
 			"_id": id,
 		})
 }
 
-func (m *MongoRepository) ReadByEmail(ctx context.Context, email string) (*userdomain.User, error) {
+func (m *MongoRepository) GetByEmail(ctx context.Context, email string) (*userdomain.User, error) {
 	return mongodatabase.
-		Q[userdomain.User](m.database.Collection(userCollection)).
+		NewQuery[userdomain.User](m.database.Collection(userCollection)).
 		FindOne(ctx, bson.M{
 			"email": email,
 		})
 }
 
-func (m *MongoRepository) ReadByNickname(ctx context.Context, nickname string) (*userdomain.User, error) {
+func (m *MongoRepository) GetByNickname(ctx context.Context, nickname string) (*userdomain.User, error) {
 	return mongodatabase.
-		Q[userdomain.User](m.database.Collection(userCollection)).
+		NewQuery[userdomain.User](m.database.Collection(userCollection)).
 		FindOne(ctx, bson.M{
 			"nickname": nickname,
 		})
@@ -77,7 +77,7 @@ func (m *MongoRepository) ReadByNickname(ctx context.Context, nickname string) (
 
 func (m *MongoRepository) Exists(ctx context.Context, id string) (bool, error) {
 	return mongodatabase.
-		Q[userdomain.User](m.database.Collection(userCollection)).
+		NewQuery[userdomain.User](m.database.Collection(userCollection)).
 		Exists(ctx, bson.M{
 			"_id": id,
 		})

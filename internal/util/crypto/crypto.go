@@ -3,26 +3,32 @@ package cryptoutil
 import (
 	"crypto"
 	"crypto/rand"
+	"crypto/sha256"
 	"crypto/x509"
-	"encoding/hex"
 	"encoding/pem"
 	"errors"
 	"fmt"
 	"os"
 )
 
-const (
-	TokenSize = 64
-)
-
-func Token() string {
-	result := make([]byte, TokenSize)
+func Bytes(size int) []byte {
+	result := make([]byte, size)
 
 	if _, err := rand.Read(result); err != nil {
 		panic(fmt.Sprintf("unexpected error during token generation: %v", err))
 	}
 
-	return hex.EncodeToString(result)
+	return result
+}
+
+func Sha224(in []byte) []byte {
+	hash := sha256.New224()
+
+	if _, err := hash.Write(in); err != nil {
+		panic(fmt.Sprintf("unexpected error during hashing with sha224: %v", err))
+	}
+
+	return hash.Sum(nil)
 }
 
 func ReadPrivateKey(path string) (crypto.Signer, error) {

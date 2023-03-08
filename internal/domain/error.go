@@ -30,11 +30,19 @@ func ErrBadRequest(err error) *Error {
 	}
 }
 
+func ErrForbidden() *Error {
+	return &Error{
+		StatusCode: http.StatusForbidden,
+
+		Code: 2,
+		Name: "ERR_FORBIDDEN",
+	}
+}
 func ErrNotImplemented() *Error {
 	return &Error{
 		StatusCode: http.StatusNotImplemented,
 
-		Code: 2,
+		Code: 3,
 		Name: "ERR_NOT_IMPLEMENTED",
 	}
 }

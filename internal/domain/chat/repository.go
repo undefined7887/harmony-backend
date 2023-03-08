@@ -2,26 +2,21 @@ package chatdomain
 
 import "context"
 
-type Repository interface {
+type MessageRepository interface {
 	Create(ctx context.Context, message *Message) (bool, error)
 
-	// List returns messages from chat
+	Get(ctx context.Context, id string) (*Message, error)
+	List(ctx context.Context, chatID string, offset, limit int64) ([]Message, error)
+
+	UpdateText(ctx context.Context, id, userID, text string) (*Message, error)
+}
+
+type ChatRepository interface {
 	List(
 		ctx context.Context,
-		peerHash string,
+		userID, chatType string,
 		offset, limit int64,
-	) ([]Message, error)
+	) ([]Chat, error)
 
-	// ListRecent returns most recent message in each chat for user
-	ListRecent(
-		ctx context.Context,
-		userID, peerType string,
-		offset, limit int64,
-	) ([]Message, error)
-
-	// Update updates single message contents
-	Update(ctx context.Context, userID, peerHash, id, text string) (*Message, error)
-
-	// UpdateRead special function to set read status to true for all messages in chat
-	UpdateRead(ctx context.Context, userID, peerHash string) (int64, error)
+	UpdateRead(ctx context.Context, userID, chatID string) (int64, error)
 }

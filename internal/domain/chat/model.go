@@ -1,62 +1,66 @@
 package chatdomain
 
 import (
-	"github.com/undefined7887/harmony-backend/internal/util"
-	"strings"
+	"github.com/undefined7887/harmony-backend/internal/domain"
 	"time"
 )
 
 const (
-	MessagePeerTypeUser  = "user"
-	MessagePeerTypeGroup = "group"
+	ChatTypeUser  = "user"
+	ChatTypeGroup = "group"
 )
+
+type Chat struct {
+	ID string `bson:"_id"`
+
+	Type string `bson:"type"`
+	Name string `bson:"name,omitempty"`
+
+	// Information about messages in chat, optional
+	Message *ChatMessage `bson:"message,omitempty"`
+
+	CreatedAt *time.Time `bson:"created_at,omitempty"`
+	UpdatedAt *time.Time `bson:"updated_at,omitempty"`
+}
+
+type ChatMessage struct {
+	Last Message `bson:"last"`
+
+	// Total count of unread messages
+	UnreadCount int64 `bson:"unread_count"`
+}
 
 type Message struct {
 	ID string `bson:"_id"`
 
-	// Sender of message
 	UserID string `bson:"user_id"`
+	PeerID string `bson:"peer_id"`
 
-	// Receiver of message
-	PeerID   string `bson:"peer_id"`
-	PeerType string `bson:"peer_type"`
+	// For group messages - group id
+	// For private messages - combination of user ids
+	ChatID   string `bson:"chat_id"`
+	ChatType string `bson:"chat_type"`
 
-	// Grouping factor
-	// - For users: join(sort(user_from_id, user_peer_id))
-	// - For groups: group_id
-	PeerHash string `bson:"peer_hash"`
+	Text        string   `bson:"text"`
+	Attachments []string `bson:"attachments,omitempty"`
 
-	Text string `bson:"text"`
-	Read bool   `bson:"read"`
+	// Users, who read this message
+	UserReadIDs []string `bson:"user_read_ids"`
 
 	CreatedAt time.Time  `bson:"created_at"`
 	UpdatedAt *time.Time `bson:"updated_at,omitempty"`
-	DeletedAt *time.Time `bson:"deleted_at,omitempty"`
 }
 
-func (m *Message) DTO() MessageDTO {
-	return MessageDTO{
-		ID:        m.ID,
-		UserID:    m.UserID,
-		PeerID:    m.PeerID,
-		PeerType:  m.PeerType,
-		Text:      m.Text,
-		Read:      m.Read,
-		CreatedAt: m.CreatedAt,
-		UpdatedAt: m.UpdatedAt,
-	}
-}
+func ChatID(userID, peerID, chatType string) string {
+	var chatID string
 
-func CalculatePeerHash(userID, peerID, peerType string) string {
-	var peerHash string
+	switch chatType {
+	case ChatTypeUser:
+		chatID = domain.CombineIDs(userID, peerID)
 
-	switch peerType {
-	case MessagePeerTypeUser:
-		peerHash = strings.Join(util.SortSequence(userID, peerID), "_")
-
-	case MessagePeerTypeGroup:
-		peerHash = peerID
+	case ChatTypeGroup:
+		chatID = peerID
 	}
 
-	return peerHash
+	return chatID
 }

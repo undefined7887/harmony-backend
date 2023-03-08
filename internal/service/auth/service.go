@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/google/uuid"
+	"github.com/undefined7887/harmony-backend/internal/domain"
 	"github.com/undefined7887/harmony-backend/internal/domain/auth"
 	"github.com/undefined7887/harmony-backend/internal/domain/user"
 	jwtservice "github.com/undefined7887/harmony-backend/internal/service/jwt"
 	"github.com/undefined7887/harmony-backend/internal/third_party/google"
-	"github.com/undefined7887/harmony-backend/internal/util/crypto"
 	randutil "github.com/undefined7887/harmony-backend/internal/util/rand"
 	"time"
 )
@@ -49,7 +48,7 @@ func (s *Service) GoogleSignUp(ctx context.Context, idtoken, nickname string) (s
 	}
 
 	user := &userdomain.User{
-		ID:        uuid.NewString(),
+		ID:        domain.ID(),
 		Email:     claims.Email,
 		Photo:     claims.Picture,
 		Nickname:  fmt.Sprintf("%s#%d", nickname, randutil.RandomNumber(MinNicknameTag, MaxNicknameTag)),
@@ -67,7 +66,7 @@ func (s *Service) GoogleSignUp(ctx context.Context, idtoken, nickname string) (s
 
 	return s.jwtService.Create(authdomain.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
-			ID: cryptoutil.Token(),
+			ID: domain.Token(),
 
 			Issuer:  s.jwtService.Issuer(),
 			Subject: user.ID,
@@ -84,7 +83,7 @@ func (s *Service) GoogleSignIn(ctx context.Context, idtoken string) (string, err
 		return "", authdomain.ErrWrongGoogleToken()
 	}
 
-	user, err := s.userRepository.ReadByEmail(ctx, claims.Email)
+	user, err := s.userRepository.GetByEmail(ctx, claims.Email)
 	if err != nil {
 		return "", err
 	}
@@ -95,7 +94,7 @@ func (s *Service) GoogleSignIn(ctx context.Context, idtoken string) (string, err
 
 	return s.jwtService.Create(authdomain.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
-			ID: cryptoutil.Token(),
+			ID: domain.Token(),
 
 			Issuer:  s.jwtService.Issuer(),
 			Subject: user.ID,
