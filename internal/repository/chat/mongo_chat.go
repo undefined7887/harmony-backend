@@ -9,10 +9,6 @@ import (
 	"time"
 )
 
-const (
-	chatCollection = "chats"
-)
-
 type MongoChatRepository struct {
 	database *mongo.Database
 }
@@ -23,7 +19,7 @@ func NewMongoChatRepository(db *mongo.Database) chatdomain.ChatRepository {
 	}
 }
 
-func (m *MongoChatRepository) List(ctx context.Context, userID, chatType string, offset, limit int64) ([]chatdomain.Chat, error) {
+func (m *MongoChatRepository) List(ctx context.Context, userID, peerType string, offset, limit int64) ([]chatdomain.Chat, error) {
 	match := bson.M{
 		"$or": bson.A{
 			bson.M{"user_id": userID},
@@ -32,8 +28,8 @@ func (m *MongoChatRepository) List(ctx context.Context, userID, chatType string,
 	}
 
 	// Add filter on chat_type if presented
-	if chatType != "" {
-		match["chat_type"] = chatType
+	if peerType != "" {
+		match["peer_type"] = peerType
 	}
 
 	return mongodatabase.
@@ -56,8 +52,8 @@ func (m *MongoChatRepository) List(ctx context.Context, userID, chatType string,
 			},
 			bson.M{
 				"$lookup": bson.M{
-					"from": chatCollection,
-					"as":   "chat",
+					"from": groupCollection,
+					"as":   "group",
 
 					"localField":   "message.chat_id",
 					"foreignField": "_id",
@@ -65,7 +61,7 @@ func (m *MongoChatRepository) List(ctx context.Context, userID, chatType string,
 			},
 			bson.M{
 				"$unwind": bson.M{
-					"path": "$chat",
+					"path": "$group",
 
 					// For more information, see:
 					// https://www.mongodb.com/docs/manual/reference/operator/aggregation/unwind
@@ -75,8 +71,8 @@ func (m *MongoChatRepository) List(ctx context.Context, userID, chatType string,
 			bson.M{
 				"$group": bson.M{
 					"_id": "$message.chat_id",
-					"chat": bson.M{
-						"$first": "$chat",
+					"group": bson.M{
+						"$first": "$group",
 					},
 					"message": bson.M{
 						"$first": "$message",
@@ -94,7 +90,7 @@ func (m *MongoChatRepository) List(ctx context.Context, userID, chatType string,
 											"$eq": bson.A{userID, "$message.user_id"},
 										},
 										bson.M{
-											"$setIsSubset": bson.A{bson.A{userID}, "$message.user_read_ids"},
+											"$setIsSubset": bson.A{bson.A{userID}, "$message.read_user_ids"},
 										},
 									},
 								},
@@ -109,17 +105,27 @@ func (m *MongoChatRepository) List(ctx context.Context, userID, chatType string,
 				"$project": bson.M{
 					"chat": bson.M{
 						"$mergeObjects": bson.A{
-							"$chat",
 							bson.M{
-								// If chat not found
-								"_id":  "$message.chat_id",
-								"type": "$message.chat_type",
-
-								"message": bson.M{
-									"last":         "$message",
-									"unread_count": "$unread_count",
-								},
+								"message":      "$message",
+								"unread_count": "$unread_count",
 							},
+							// User chat
+							bson.M{
+								// For user chats choosing chat_id as opposite to current user
+								"_id": bson.M{
+									"$cond": bson.M{
+										"if": bson.M{
+											"$eq": bson.A{userID, "$message.user_id"},
+										},
+										"then": "$message.peer_id",
+										"else": "$message.user_id",
+									},
+								},
+								"type": "$message.peer_type",
+							},
+
+							// Group chat
+							"$group",
 						},
 					},
 				},
@@ -143,15 +149,19 @@ func (m *MongoChatRepository) UpdateRead(ctx context.Context, userID, chatID str
 		NewQuery[chatdomain.Message](m.database.Collection(messageCollection)).
 		UpdateMany(ctx,
 			bson.M{
-				"user_id": bson.M{"$ne": userID},
 				"chat_id": chatID,
-				"user_read_ids": bson.M{
+
+				// User can't read self messages
+				"user_id": bson.M{"$ne": userID},
+
+				// User can't re-read message
+				"read_user_ids": bson.M{
 					"$nin": bson.A{userID},
 				},
 			},
 			bson.M{
 				"$addToSet": bson.M{
-					"user_read_ids": userID,
+					"read_user_ids": userID,
 				},
 				"$set": bson.M{
 					"updated_at": time.Now(),

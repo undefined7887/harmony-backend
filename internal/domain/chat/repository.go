@@ -14,7 +14,7 @@ type MessageRepository interface {
 type ChatRepository interface {
 	List(
 		ctx context.Context,
-		userID, chatType string,
+		userID, peerType string,
 		offset, limit int64,
 	) ([]Chat, error)
 

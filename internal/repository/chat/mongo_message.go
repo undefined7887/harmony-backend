@@ -48,7 +48,7 @@ func NewMongoMessageMigrationsRunner(lifecycle fx.Lifecycle, logger *zap.Logger,
 				mongodatabase.
 					NewQuery[any](database.Collection(messageCollection)).
 					BuildIndex(ctx,
-						mongodatabase.IndexKeys("user_read_ids"),
+						mongodatabase.IndexKeys("read_user_ids"),
 					),
 			)
 		},

@@ -1,51 +1,37 @@
 package chatdomain
 
-import "time"
+import (
+	"time"
+)
 
 type ChatDTO struct {
-	ID string `json:"id"`
-
-	Type string `json:"type"`
-	Name string `json:"name,omitempty"`
-
-	Message ChatMessageDTO `json:"message"`
-}
-
-type ChatMessageDTO struct {
-	Last        MessageDTO `json:"last"`
+	ID          string     `json:"id"`
+	Type        string     `json:"type"`
+	Name        string     `json:"name,omitempty"`
+	Message     MessageDTO `json:"message"`
 	UnreadCount int64      `json:"unread_count"`
 }
 
 func (c *Chat) DTO() ChatDTO {
 	return ChatDTO{
-		ID:   c.ID,
-		Type: c.Type,
-		Name: c.Name,
-
-		Message: ChatMessageDTO{
-			Last:        c.Message.Last.DTO(),
-			UnreadCount: c.Message.UnreadCount,
-		},
+		ID:          c.ID,
+		Type:        c.Type,
+		Name:        c.Name,
+		Message:     c.Message.DTO(),
+		UnreadCount: c.UnreadCount,
 	}
 }
 
 type MessageDTO struct {
-	ID string `json:"_id"`
-
-	UserID string `json:"user_id"`
-	PeerID string `json:"peer_id"`
-
-	ChatID   string `json:"chat_id"`
-	ChatType string `json:"chat_type"`
-
-	Text        string   `json:"text"`
-	Attachments []string `json:"attachments,omitempty"`
-
-	// Users, who read this message
-	UserReadIDs []string `json:"user_read_ids,omitempty"`
-
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt *time.Time `json:"updated_at,omitempty"`
+	ID          string     `json:"id"`
+	UserID      string     `json:"user_id"`
+	PeerID      string     `json:"peer_id"`
+	PeerType    string     `json:"peer_type"`
+	Text        string     `json:"text"`
+	Attachments []string   `json:"attachments,omitempty"`
+	ReadUserIDs []string   `json:"read_user_ids,omitempty"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   *time.Time `json:"updated_at,omitempty"`
 }
 
 func (m *Message) DTO() MessageDTO {
@@ -53,30 +39,25 @@ func (m *Message) DTO() MessageDTO {
 		ID:          m.ID,
 		UserID:      m.UserID,
 		PeerID:      m.PeerID,
-		ChatID:      m.ChatID,
-		ChatType:    m.ChatType,
+		PeerType:    m.PeerType,
 		Text:        m.Text,
 		Attachments: m.Attachments,
-		UserReadIDs: m.UserReadIDs,
+		ReadUserIDs: m.ReadUserIDs,
 		CreatedAt:   m.CreatedAt,
 		UpdatedAt:   m.UpdatedAt,
 	}
 }
 
 type ReadDTO struct {
-	UserID string `json:"user_id"`
-	PeerID string `json:"peer_id"`
-
-	CharID   string `json:"char_id"`
-	ChatType string `json:"chat_type"`
+	UserID   string `json:"user_id"`
+	PeerID   string `json:"peer_id"`
+	PeerType string `json:"peer_type"`
 }
 
 type TypingDTO struct {
-	UserID string `json:"user_id"`
-	PeerID string `json:"peer_id"`
-
-	ChatID   string `json:"char_id"`
-	ChatType string `json:"chat_type"`
+	UserID   string `json:"user_id"`
+	PeerID   string `json:"peer_id"`
+	PeerType string `json:"peer_type"`
 
 	Typing bool `json:"typing"`
 }

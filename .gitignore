@@ -1,13 +1,9 @@
 .idea
 .vscode
 
-config/*
-secrets/*
-
-# Harmony deploy
-deploy/harmony/config.yml
-deploy/harmony/secrets/*.pem
-deploy/harmony/secrets/*.key
+# Harmony
+config/config.yml
+config/secrets/*.pem
 
 # Centrifugo deploy
 deploy/centrifugo/config.yml

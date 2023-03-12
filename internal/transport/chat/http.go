@@ -30,10 +30,10 @@ func (e *HttpEndpoint) Register(group *gin.RouterGroup) {
 	{
 		chatGroup.GET("", e.listChats)
 
-		chatGroup.POST("/:chat_type/:peer_id", e.createMessage)
-		chatGroup.GET("/:chat_type/:peer_id", e.listMessages)
-		chatGroup.PUT("/:chat_type/:peer_id/read", e.updateChatRead)
-		chatGroup.PUT("/:chat_type/:peer_id/typing", e.updateChatTyping)
+		chatGroup.POST("/:peer_type/:peer_id", e.createMessage)
+		chatGroup.GET("/:peer_type/:peer_id", e.listMessages)
+		chatGroup.PUT("/:peer_type/:peer_id/read", e.updateChatRead)
+		chatGroup.PUT("/:peer_type/:peer_id/typing", e.updateChatTyping)
 
 		chatGroup.GET("/message/:id", e.getMessage)
 		chatGroup.PUT("/message/:id", e.updateMessage)
@@ -42,9 +42,9 @@ func (e *HttpEndpoint) Register(group *gin.RouterGroup) {
 
 // Common DTOs
 
-type ChatParams struct {
+type PeerParams struct {
 	PeerID   string `uri:"peer_id" binding:"id"`
-	ChatType string `uri:"chat_type" binding:"oneof=user group"`
+	PeerType string `uri:"peer_type" binding:"oneof=user group"`
 }
 
 type MessageIdParam struct {
@@ -68,7 +68,7 @@ type CreateMessageResponse struct {
 
 func (e *HttpEndpoint) createMessage(ctx *gin.Context) {
 	var (
-		params ChatParams
+		params PeerParams
 		body   CreateMessageBody
 	)
 
@@ -78,7 +78,7 @@ func (e *HttpEndpoint) createMessage(ctx *gin.Context) {
 
 	userID := authtransport.GetClaims(ctx).Subject
 
-	message, err := e.service.CreateMessage(ctx, userID, params.PeerID, params.ChatType, body.Text)
+	message, err := e.service.CreateMessage(ctx, userID, params.PeerID, params.PeerType, body.Text)
 	if err != nil {
 		transport.HttpHandleError(ctx, err)
 
@@ -115,7 +115,7 @@ type ListMessagesResponse struct {
 
 func (e *HttpEndpoint) listMessages(ctx *gin.Context) {
 	var (
-		params ChatParams
+		params PeerParams
 		query  PaginationQuery
 	)
 
@@ -125,7 +125,7 @@ func (e *HttpEndpoint) listMessages(ctx *gin.Context) {
 
 	userID := authtransport.GetClaims(ctx).Subject
 
-	messages, err := e.service.ListMessages(ctx, userID, params.PeerID, params.ChatType, query.Offset, query.Limit)
+	messages, err := e.service.ListMessages(ctx, userID, params.PeerID, params.PeerType, query.Offset, query.Limit)
 	if err != nil {
 		transport.HttpHandleError(ctx, err)
 
@@ -167,7 +167,7 @@ func (e *HttpEndpoint) updateMessage(ctx *gin.Context) {
 type ListChatsQuery struct {
 	PaginationQuery
 
-	ChatType string `form:"chat_type" binding:"omitempty,oneof=user group"`
+	PeerType string `form:"peer_type" binding:"omitempty,oneof=user group"`
 }
 
 type ListChatsResponse struct {
@@ -183,7 +183,7 @@ func (e *HttpEndpoint) listChats(ctx *gin.Context) {
 
 	userID := authtransport.GetClaims(ctx).Subject
 
-	chats, err := e.service.ListChats(ctx, userID, query.ChatType, query.Offset, query.Limit)
+	chats, err := e.service.ListChats(ctx, userID, query.PeerType, query.Offset, query.Limit)
 	if err != nil {
 		transport.HttpHandleError(ctx, err)
 
@@ -198,7 +198,7 @@ func (e *HttpEndpoint) listChats(ctx *gin.Context) {
 }
 
 func (e *HttpEndpoint) updateChatRead(ctx *gin.Context) {
-	var params ChatParams
+	var params PeerParams
 
 	if !transport.HttpBindURI(ctx, &params) {
 		return
@@ -206,7 +206,7 @@ func (e *HttpEndpoint) updateChatRead(ctx *gin.Context) {
 
 	userID := authtransport.GetClaims(ctx).Subject
 
-	if err := e.service.UpdateChatRead(ctx, userID, params.PeerID, params.ChatType); err != nil {
+	if err := e.service.UpdateChatRead(ctx, userID, params.PeerID, params.PeerType); err != nil {
 		transport.HttpHandleError(ctx, err)
 
 		return
@@ -221,7 +221,7 @@ type UpdateTypingBody struct {
 
 func (e *HttpEndpoint) updateChatTyping(ctx *gin.Context) {
 	var (
-		params ChatParams
+		params PeerParams
 		body   UpdateTypingBody
 	)
 
@@ -231,7 +231,7 @@ func (e *HttpEndpoint) updateChatTyping(ctx *gin.Context) {
 
 	userID := authtransport.GetClaims(ctx).Subject
 
-	if err := e.service.UpdateChatTyping(ctx, userID, params.PeerID, params.ChatType, body.Typing); err != nil {
+	if err := e.service.UpdateChatTyping(ctx, userID, params.PeerID, params.PeerType, body.Typing); err != nil {
 		transport.HttpHandleError(ctx, err)
 
 		return
