@@ -3,14 +3,16 @@ package authservice
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/undefined7887/harmony-backend/internal/domain"
 	"github.com/undefined7887/harmony-backend/internal/domain/auth"
 	"github.com/undefined7887/harmony-backend/internal/domain/user"
+	"github.com/undefined7887/harmony-backend/internal/repository"
 	jwtservice "github.com/undefined7887/harmony-backend/internal/service/jwt"
 	"github.com/undefined7887/harmony-backend/internal/third_party/google"
 	randutil "github.com/undefined7887/harmony-backend/internal/util/rand"
-	"time"
 )
 
 const (
@@ -37,70 +39,72 @@ func NewService(
 	}
 }
 
-func (s *Service) GoogleSignUp(ctx context.Context, idtoken, nickname string) (string, error) {
+func (s *Service) GoogleSignUp(ctx context.Context, idtoken, nickname string) (authdomain.AuthDTO, error) {
 	claims, err := s.googleAuthService.Auth(ctx, idtoken)
 	if err != nil {
-		return "", authdomain.ErrWrongGoogleToken()
+		return authdomain.AuthDTO{}, authdomain.ErrWrongGoogleToken()
 	}
 
 	if !claims.EmailVerified {
-		return "", authdomain.ErrEmailNotVerified()
+		return authdomain.AuthDTO{}, authdomain.ErrEmailNotVerified()
 	}
 
-	user := &userdomain.User{
+	now := time.Now()
+
+	user := userdomain.User{
 		ID:        domain.ID(),
+		Status:    userdomain.StatusOffline,
 		Email:     claims.Email,
 		Photo:     claims.Picture,
 		Nickname:  fmt.Sprintf("%s#%d", nickname, randutil.RandomNumber(MinNicknameTag, MaxNicknameTag)),
-		CreatedAt: time.Now(),
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
 
-	inserted, err := s.userRepository.Create(ctx, user)
+	inserted, err := s.userRepository.Create(ctx, &user)
 	if err != nil {
-		return "", err
+		return authdomain.AuthDTO{}, err
 	}
 
 	if !inserted {
-		return "", userdomain.ErrUserAlreadyExists()
+		return authdomain.AuthDTO{}, userdomain.ErrUserAlreadyExists()
 	}
 
-	return s.jwtService.Create(authdomain.Claims{
-		RegisteredClaims: jwt.RegisteredClaims{
-			ID: domain.Token(),
-
-			Issuer:  s.jwtService.Issuer(),
-			Subject: user.ID,
-
-			IssuedAt:  s.jwtService.IssuedAt(),
-			ExpiresAt: s.jwtService.ExpireAt(),
-		},
-	}), nil
+	return authdomain.AuthDTO{
+		UserID:    user.ID,
+		UserToken: s.createToken(&user),
+	}, nil
 }
 
-func (s *Service) GoogleSignIn(ctx context.Context, idtoken string) (string, error) {
+func (s *Service) GoogleSignIn(ctx context.Context, idtoken string) (authdomain.AuthDTO, error) {
 	claims, err := s.googleAuthService.Auth(ctx, idtoken)
 	if err != nil {
-		return "", authdomain.ErrWrongGoogleToken()
+		return authdomain.AuthDTO{}, authdomain.ErrWrongGoogleToken()
 	}
 
 	user, err := s.userRepository.GetByEmail(ctx, claims.Email)
+	if repository.IsNoDocumentsErr(err) {
+		return authdomain.AuthDTO{}, userdomain.ErrUserNotFound()
+	}
+
 	if err != nil {
-		return "", err
+		return authdomain.AuthDTO{}, err
 	}
 
-	if user == nil {
-		return "", userdomain.ErrUserNotFound()
-	}
+	return authdomain.AuthDTO{
+		UserID:    user.ID,
+		UserToken: s.createToken(&user),
+	}, nil
+}
 
-	return s.jwtService.Create(authdomain.Claims{
-		RegisteredClaims: jwt.RegisteredClaims{
-			ID: domain.Token(),
+func (s *Service) createToken(user *userdomain.User) string {
+	return s.jwtService.Create(jwt.RegisteredClaims{
+		ID: domain.Token(),
 
-			Issuer:  s.jwtService.Issuer(),
-			Subject: user.ID,
+		Issuer:  s.jwtService.Issuer(),
+		Subject: user.ID,
 
-			IssuedAt:  s.jwtService.IssuedAt(),
-			ExpiresAt: s.jwtService.ExpireAt(),
-		},
-	}), nil
+		IssuedAt:  s.jwtService.IssuedAt(),
+		ExpiresAt: s.jwtService.ExpireAt(),
+	})
 }

@@ -3,12 +3,14 @@ package transport
 import (
 	"context"
 	"errors"
+	"net/http"
+
+	"go.uber.org/fx"
+	"go.uber.org/zap"
+
 	"github.com/gin-gonic/gin"
 	"github.com/undefined7887/harmony-backend/internal/config"
 	"github.com/undefined7887/harmony-backend/internal/domain"
-	"go.uber.org/fx"
-	"go.uber.org/zap"
-	"net/http"
 )
 
 type HttpEndpoint interface {
@@ -60,7 +62,6 @@ func HttpBindQuery(ctx *gin.Context, request any) bool {
 
 	return true
 }
-
 func HttpHandleError(ctx *gin.Context, err error) {
 	domainErr, ok := err.(*domain.Error)
 	if !ok {

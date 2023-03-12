@@ -1,8 +1,9 @@
 package chatdomain
 
 import (
-	"github.com/undefined7887/harmony-backend/internal/domain"
 	"time"
+
+	"github.com/undefined7887/harmony-backend/internal/domain"
 )
 
 const (
@@ -37,14 +38,16 @@ type Message struct {
 	// Internal use only
 	ChatID string `bson:"chat_id"`
 
-	Text        string   `bson:"text"`
+	Text   string `bson:"text"`
+	Edited bool   `bson:"edited"`
+
 	Attachments []string `bson:"attachments,omitempty"`
 
 	// Users, who read this message
 	ReadUserIDs []string `bson:"read_user_ids"`
 
-	CreatedAt time.Time  `bson:"created_at"`
-	UpdatedAt *time.Time `bson:"updated_at,omitempty"`
+	CreatedAt time.Time `bson:"created_at"`
+	UpdatedAt time.Time `bson:"updated_at"`
 }
 
 func ChatID(userID, peerID, peerType string) string {

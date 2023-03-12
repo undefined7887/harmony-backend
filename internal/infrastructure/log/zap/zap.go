@@ -2,10 +2,13 @@ package zaplog
 
 import (
 	"context"
-	"github.com/undefined7887/harmony-backend/internal/config"
+
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/gin-gonic/gin"
+	"github.com/undefined7887/harmony-backend/internal/config"
 )
 
 func NewLogger(config *config.Logger, appConfig *config.App) (*zap.Logger, error) {
@@ -59,18 +62,36 @@ func NewLifecycleLogger(lifecycle fx.Lifecycle, logger *zap.Logger, appConfig *c
 	})
 }
 
-type loggerKey struct {
-}
+type loggerKey struct{}
+
+const (
+	loggerGinKey = "logger"
+)
 
 func PackLogger(ctx context.Context, logger *zap.Logger) context.Context {
 	return context.WithValue(ctx, loggerKey{}, logger)
 }
 
-func UnpackLogger(ctx context.Context) *zap.Logger {
-	logger, ok := ctx.Value(loggerKey{}).(*zap.Logger)
-	if !ok {
-		return zap.NewNop()
-	}
+func PackLoggerGin(ctx *gin.Context, logger *zap.Logger) {
+	ctx.Set(loggerGinKey, logger)
+}
 
-	return logger
+func UnpackLogger(ctx context.Context) *zap.Logger {
+	switch rawCtx := ctx.(type) {
+	case *gin.Context:
+		value, ok := rawCtx.Get(loggerGinKey)
+		if !ok {
+			return zap.NewNop()
+		}
+
+		return value.(*zap.Logger)
+
+	default:
+		value, ok := ctx.Value(loggerKey{}).(*zap.Logger)
+		if !ok {
+			return zap.NewNop()
+		}
+
+		return value
+	}
 }

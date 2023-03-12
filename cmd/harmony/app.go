@@ -1,6 +1,11 @@
 package main
 
 import (
+	"os"
+
+	"go.uber.org/fx"
+	"go.uber.org/fx/fxevent"
+
 	"github.com/undefined7887/harmony-backend/internal/config"
 	mongodatabase "github.com/undefined7887/harmony-backend/internal/infrastructure/database/mongo"
 	zaplog "github.com/undefined7887/harmony-backend/internal/infrastructure/log/zap"
@@ -16,9 +21,6 @@ import (
 	"github.com/undefined7887/harmony-backend/internal/transport/auth"
 	chattransport "github.com/undefined7887/harmony-backend/internal/transport/chat"
 	usertransport "github.com/undefined7887/harmony-backend/internal/transport/user"
-	"go.uber.org/fx"
-	"go.uber.org/fx/fxevent"
-	"os"
 )
 
 func NewApp() *fx.App {

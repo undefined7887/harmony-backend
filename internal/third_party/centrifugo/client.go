@@ -3,6 +3,7 @@ package centrifugo
 import (
 	"context"
 	"fmt"
+
 	"github.com/undefined7887/harmony-backend/internal/config"
 	"github.com/undefined7887/harmony-backend/internal/util/http"
 
@@ -42,14 +43,14 @@ type PublishResponse struct {
 func (c *Client) Publish(ctx context.Context, channel string, data any) (*PublishResponse, error) {
 	resp, err := c.client.R().
 		SetContext(ctx).
-		SetBody(&request[PublishRequest]{
+		SetBody(&Request[PublishRequest]{
 			Method: publishMethod,
 			Params: PublishRequest{
 				Channel: channel,
 				Data:    data,
 			},
 		}).
-		SetResult(&response[PublishResponse]{}).
+		SetResult(&Response[PublishResponse]{}).
 		Post("")
 	if err != nil {
 		return nil, fmt.Errorf("centrifugo: %v", err)
@@ -70,10 +71,10 @@ func handleResponse[R any](resp *resty.Response) (*R, error) {
 		}
 	}
 
-	result := resp.Result().(*response[R])
+	result := resp.Result().(*Response[R])
 
 	// Centrifugo can send errors with '200 OK' status
-	if result.Error.Code > 0 {
+	if result.Error != nil && result.Error.Code > 0 {
 		return nil, &ApiError{
 			Code:    result.Error.Code,
 			Message: result.Error.Message,

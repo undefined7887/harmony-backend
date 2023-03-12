@@ -1,8 +1,9 @@
 package transport
 
 import (
-	_ "github.com/undefined7887/harmony-backend/internal/validation" // enabling validation
 	"go.uber.org/fx"
+
+	_ "github.com/undefined7887/harmony-backend/internal/validation" // enabling validation
 )
 
 var Module = fx.Options(

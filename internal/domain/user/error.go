@@ -1,8 +1,9 @@
 package userdomain
 
 import (
-	"github.com/undefined7887/harmony-backend/internal/domain"
 	"net/http"
+
+	"github.com/undefined7887/harmony-backend/internal/domain"
 )
 
 const (

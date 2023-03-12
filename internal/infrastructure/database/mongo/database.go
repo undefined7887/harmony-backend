@@ -3,12 +3,14 @@ package mongodatabase
 import (
 	"context"
 	"fmt"
-	"github.com/undefined7887/harmony-backend/internal/config"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+
+	"github.com/undefined7887/harmony-backend/internal/config"
 )
 
 func NewDatabase(config *config.Mongo) (*mongo.Database, error) {
@@ -25,7 +27,6 @@ func NewDatabase(config *config.Mongo) (*mongo.Database, error) {
 	}
 
 	client, err := mongo.NewClient(clientOpts)
-
 	if err != nil {
 		return nil, err
 	}
@@ -82,6 +83,18 @@ func Transaction[T any](
 	}
 
 	return result.(T), nil
+}
+
+func TransactionNoReturn(
+	ctx context.Context,
+	database *mongo.Database,
+	fn func(ctx context.Context) error,
+) error {
+	_, err := Transaction[struct{}](ctx, database, func(ctx context.Context) (struct{}, error) {
+		return struct{}{}, fn(ctx)
+	})
+
+	return err
 }
 
 func IndexKeys(keys ...string) bson.D {

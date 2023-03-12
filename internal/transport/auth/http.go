@@ -1,10 +1,12 @@
 package authtransport
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
+	authdomain "github.com/undefined7887/harmony-backend/internal/domain/auth"
 	"github.com/undefined7887/harmony-backend/internal/service/auth"
 	"github.com/undefined7887/harmony-backend/internal/transport"
-	"net/http"
 )
 
 type HttpEndpoint struct {
@@ -25,54 +27,40 @@ func (e *HttpEndpoint) Register(group *gin.RouterGroup) {
 	}
 }
 
-// AuthResponse is a base response for authentication endpoints
-type AuthResponse struct {
-	Token string `json:"token"`
-}
-
-type SignUpBody struct {
-	Idtoken  string `json:"idtoken" binding:"jwt"`
-	Nickname string `json:"nickname" binding:"nickname"`
-}
-
 func (e *HttpEndpoint) googleSignUp(ctx *gin.Context) {
-	var body SignUpBody
+	var body authdomain.SignUpRequestBody
 
 	if !transport.HttpBindJSON(ctx, &body) {
 		return
 	}
 
-	token, err := e.service.GoogleSignUp(ctx, body.Idtoken, body.Nickname)
+	auth, err := e.service.GoogleSignUp(ctx, body.Idtoken, body.Nickname)
 	if err != nil {
 		transport.HttpHandleError(ctx, err)
 
 		return
 	}
 
-	ctx.JSON(http.StatusOK, AuthResponse{
-		Token: token,
+	ctx.JSON(http.StatusOK, authdomain.SignUpResponse{
+		AuthDTO: auth,
 	})
 }
 
-type SignInBody struct {
-	Idtoken string `json:"idtoken" binding:"jwt"`
-}
-
 func (e *HttpEndpoint) googleSignIn(ctx *gin.Context) {
-	var body SignInBody
+	var body authdomain.SignInRequestBody
 
 	if !transport.HttpBindJSON(ctx, &body) {
 		return
 	}
 
-	token, err := e.service.GoogleSignIn(ctx, body.Idtoken)
+	auth, err := e.service.GoogleSignIn(ctx, body.Idtoken)
 	if err != nil {
 		transport.HttpHandleError(ctx, err)
 
 		return
 	}
 
-	ctx.JSON(http.StatusOK, AuthResponse{
-		Token: token,
+	ctx.JSON(http.StatusOK, authdomain.SignInResponse{
+		AuthDTO: auth,
 	})
 }

@@ -5,9 +5,10 @@ import (
 	"crypto/ed25519"
 	"crypto/elliptic"
 	"crypto/rand"
-	"github.com/undefined7887/harmony-backend/internal/util/crypto"
 	"log"
 	"os"
+
+	"github.com/undefined7887/harmony-backend/internal/util/crypto"
 )
 
 func main() {

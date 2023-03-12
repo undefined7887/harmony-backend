@@ -2,10 +2,11 @@ package config
 
 import (
 	"flag"
-	"github.com/ilyakaznacheev/cleanenv"
-	"go.uber.org/fx"
 	"os"
 	"time"
+
+	"github.com/ilyakaznacheev/cleanenv"
+	"go.uber.org/fx"
 )
 
 const (

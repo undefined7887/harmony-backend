@@ -1,13 +1,16 @@
 package transport
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-	"github.com/samber/lo"
-	httputil "github.com/undefined7887/harmony-backend/internal/util/http"
-	"go.uber.org/zap"
 	"net/http"
 	"time"
+
+	"go.uber.org/zap"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	zaplog "github.com/undefined7887/harmony-backend/internal/infrastructure/log/zap"
+	"github.com/undefined7887/harmony-backend/internal/util"
+	httputil "github.com/undefined7887/harmony-backend/internal/util/http"
 )
 
 func NewHttpLoggerMiddleware(logger *zap.Logger) gin.HandlerFunc {
@@ -18,10 +21,11 @@ func NewHttpLoggerMiddleware(logger *zap.Logger) gin.HandlerFunc {
 		logger := logger.With(zap.String("request_id", requestID))
 
 		// Packing logger to the next middlewares
-		//ctx = zaplog.PackLogger(ctx, logger)
+		zaplog.PackLoggerGin(ctx, logger)
 
 		// Setting X-Request-ID header
 		ctx.Header(httputil.HeaderXRequestID, requestID)
+
 		ctx.Next()
 
 		logger = logger.With(
@@ -42,7 +46,7 @@ func NewHttpLoggerMiddleware(logger *zap.Logger) gin.HandlerFunc {
 }
 
 func toErrorsSlice(errors []*gin.Error) []error {
-	return lo.Map(errors, func(item *gin.Error, index int) error {
+	return util.Map(errors, func(item *gin.Error) error {
 		return item
 	})
 }

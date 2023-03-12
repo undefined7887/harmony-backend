@@ -3,13 +3,21 @@ package chatdomain
 import "fmt"
 
 const (
-	ChannelMessageCreated = "message_created"
-	ChannelMessageUpdated = "message_updated"
-
-	ChannelRead   = "read"
-	ChannelTyping = "typing"
+	ChannelNamespace = "chat"
 )
 
-func Channel(channel, userID string) string {
-	return fmt.Sprintf("chat:%s#%s", channel, userID)
+func ChannelMessageNew(userID string) string {
+	return fmt.Sprintf("%s:message/new#%s", ChannelNamespace, userID)
+}
+
+func ChannelMessageUpdates(userID string) string {
+	return fmt.Sprintf("%s:message/updates#%s", ChannelNamespace, userID)
+}
+
+func ChannelReadUpdates(userID string) string {
+	return fmt.Sprintf("%s:read/updates#%s", ChannelNamespace, userID)
+}
+
+func ChannelTypingUpdates(userID string) string {
+	return fmt.Sprintf("%s:typing/updates#%s", ChannelNamespace, userID)
 }

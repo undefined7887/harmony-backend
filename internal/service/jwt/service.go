@@ -6,10 +6,11 @@ import (
 	"crypto/ed25519"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/undefined7887/harmony-backend/internal/config"
 	"github.com/undefined7887/harmony-backend/internal/util/crypto"
-	"time"
 )
 
 type Service struct {
@@ -52,7 +53,6 @@ func (h *Service) Create(claims jwt.Claims) string {
 	token, err := jwt.
 		NewWithClaims(h.signingMethod(), claims).
 		SignedString(h.privateKey)
-
 	if err != nil {
 		panic(fmt.Sprintf("unexpected jwt signing error: %v", err))
 	}
@@ -60,7 +60,7 @@ func (h *Service) Create(claims jwt.Claims) string {
 	return token
 }
 
-func (h *Service) Parse(token string, claims jwt.Claims) (jwt.Claims, error) {
+func (h *Service) Parse(token string, claims jwt.Claims) error {
 	parsedToken, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
 		if token.Method != h.signingMethod() {
 			return nil, errors.New("wrong signing method")
@@ -70,10 +70,10 @@ func (h *Service) Parse(token string, claims jwt.Claims) (jwt.Claims, error) {
 	})
 
 	if err != nil || !parsedToken.Valid {
-		return nil, err
+		return err
 	}
 
-	return parsedToken.Claims, nil
+	return nil
 }
 
 func (h *Service) signingMethod() jwt.SigningMethod {

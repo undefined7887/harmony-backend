@@ -2,10 +2,16 @@ package mongodatabase
 
 import (
 	"context"
-	"errors"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/samber/lo"
+)
+
+const (
+	batchSize = 1000
 )
 
 type Query[T any] struct {
@@ -17,6 +23,7 @@ func NewQuery[T any](collection *mongo.Collection) *Query[T] {
 		collection: collection,
 	}
 }
+
 func (q *Query[T]) BuildIndex(ctx context.Context, keys interface{}, opts ...*options.IndexOptions) error {
 	_, err := q.collection.
 		Indexes().
@@ -56,22 +63,66 @@ func (q *Query[T]) Find(ctx context.Context, filter bson.M, opts ...*options.Fin
 	return result, nil
 }
 
-func (q *Query[T]) FindOne(ctx context.Context, filter bson.M, opts ...*options.FindOneOptions) (*T, error) {
+func (q *Query[T]) FindCursor(
+	ctx context.Context,
+	filter bson.M,
+	cb func(ctx context.Context, models []T) error,
+	opts ...*options.FindOptions,
+) error {
+	cursor, err := q.collection.Find(ctx, filter, opts...)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		_ = cursor.Close(ctx)
+	}()
+
+	batch := make([]T, 0, batchSize)
+
+	for cursor.Next(ctx) {
+		var result T
+
+		if err := cursor.Decode(&result); err != nil {
+			return err
+		}
+
+		batch = append(batch, result)
+
+		if len(batch) >= batchSize {
+			if err := cb(ctx, batch); err != nil {
+				return err
+			}
+
+			batch = batch[:0]
+		}
+	}
+
+	if len(batch) > 0 {
+		if err := cb(ctx, batch); err != nil {
+			return err
+		}
+	}
+
+	if cursor.Err() != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (q *Query[T]) FindOne(ctx context.Context, filter bson.M, opts ...*options.FindOneOptions) (T, error) {
 	var result T
 
 	err := q.collection.
 		FindOne(ctx, filter, opts...).
 		Decode(&result)
 
-	if errors.Is(err, mongo.ErrNoDocuments) {
-		return nil, nil
-	}
-
 	if err != nil {
-		return nil, err
+		return lo.Empty[T](), err
 	}
 
-	return &result, nil
+	return result, nil
 }
 
 func (q *Query[T]) Exists(ctx context.Context, filter bson.M) (bool, error) {
@@ -97,7 +148,7 @@ func (q *Query[T]) Aggregate(ctx context.Context, pipeline bson.A, opts ...*opti
 	return result, nil
 }
 
-func (q *Query[T]) UpdateMany(ctx context.Context, filter bson.M, update bson.M, opts ...*options.UpdateOptions) (int64, error) {
+func (q *Query[T]) UpdateMany(ctx context.Context, filter bson.M, update any, opts ...*options.UpdateOptions) (int64, error) {
 	result, err := q.collection.UpdateMany(ctx, filter, update, opts...)
 	if err != nil {
 		return 0, err
@@ -106,20 +157,16 @@ func (q *Query[T]) UpdateMany(ctx context.Context, filter bson.M, update bson.M,
 	return result.ModifiedCount, nil
 }
 
-func (q *Query[T]) FindOneAndUpdate(ctx context.Context, filter bson.M, update bson.M, opts ...*options.FindOneAndUpdateOptions) (*T, error) {
+func (q *Query[T]) FindOneAndUpdate(ctx context.Context, filter bson.M, update any, opts ...*options.FindOneAndUpdateOptions) (T, error) {
 	var result T
 
 	err := q.collection.
 		FindOneAndUpdate(ctx, filter, update, opts...).
 		Decode(&result)
 
-	if errors.Is(err, mongo.ErrNoDocuments) {
-		return nil, nil
-	}
-
 	if err != nil {
-		return nil, err
+		return lo.Empty[T](), err
 	}
 
-	return &result, nil
+	return result, nil
 }

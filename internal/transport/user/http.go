@@ -1,12 +1,16 @@
 package usertransport
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/gin-gonic/gin"
+	userdomain "github.com/undefined7887/harmony-backend/internal/domain/user"
 	jwtservice "github.com/undefined7887/harmony-backend/internal/service/jwt"
 	userservice "github.com/undefined7887/harmony-backend/internal/service/user"
+	"github.com/undefined7887/harmony-backend/internal/third_party/centrifugo"
 	"github.com/undefined7887/harmony-backend/internal/transport"
 	authtransport "github.com/undefined7887/harmony-backend/internal/transport/auth"
-	"net/http"
 )
 
 const (
@@ -32,19 +36,19 @@ func (e *HttpEndpoint) Register(group *gin.RouterGroup) {
 	{
 		userGroup.GET("/:id", e.getUser)
 		userGroup.GET("/nickname", e.getUserByNickname)
+		userGroup.PUT("/status", e.updateUserStatus)
+	}
+
+	centrifugoGroup := group.
+		Group("/user/centrifugo")
+	{
+		centrifugoGroup.POST("/connect", e.centrifugoConnect)
+		centrifugoGroup.POST("/refresh", e.centrifugoRefresh)
 	}
 }
 
-// Common DTOs
-
-type UserIdParam struct {
-	ID string `uri:"id" binding:"id|eq=self"`
-}
-
-// Handlers
-
 func (e *HttpEndpoint) getUser(ctx *gin.Context) {
-	var params UserIdParam
+	var params userdomain.GetUserRequestParams
 
 	if !transport.HttpBindURI(ctx, &params) {
 		return
@@ -61,26 +65,92 @@ func (e *HttpEndpoint) getUser(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, user.DTO())
-}
-
-type GetUserByNicknameBody struct {
-	Nickname string `json:"nickname" binding:"nickname-extended"`
+	ctx.JSON(http.StatusOK, userdomain.GetUserResponse{
+		UserDTO: user,
+	})
 }
 
 func (e *HttpEndpoint) getUserByNickname(ctx *gin.Context) {
-	var params GetUserByNicknameBody
+	var body userdomain.GetUserByNicknameRequestBody
 
-	if !transport.HttpBindJSON(ctx, &params) {
+	if !transport.HttpBindJSON(ctx, &body) {
 		return
 	}
 
-	user, err := e.service.GetUserByNickname(ctx, params.Nickname)
+	user, err := e.service.GetUserByNickname(ctx, body.Nickname)
 	if err != nil {
 		transport.HttpHandleError(ctx, err)
 
 		return
 	}
 
-	ctx.JSON(http.StatusOK, user.DTO())
+	ctx.JSON(http.StatusOK, userdomain.GetUserResponse{
+		UserDTO: user,
+	})
+}
+
+func (e *HttpEndpoint) updateUserStatus(ctx *gin.Context) {
+	var body userdomain.UpdateUserStatusRequestBody
+
+	if !transport.HttpBindJSON(ctx, &body) {
+		return
+	}
+
+	userID := authtransport.GetClaims(ctx).Subject
+
+	// We can update to 'online', 'away' and 'silence' statuses
+	if err := e.service.UpdateStatus(ctx, userID, body.Status, false); err != nil {
+		transport.HttpHandleError(ctx, err)
+
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
+}
+
+// Centrifugo events
+
+func (e *HttpEndpoint) centrifugoConnect(ctx *gin.Context) {
+	claims, err := authtransport.ExtractAndValidateToken(ctx, e.jwtService)
+	if err != nil {
+		ctx.JSON(http.StatusOK, userdomain.CentrifugoUnauthorizedResponse)
+
+		return
+	}
+
+	if err := e.service.UpdateStatus(ctx, claims.Subject, userdomain.StatusOnline, true); err != nil {
+		transport.HttpHandleError(ctx, err)
+
+		return
+	}
+
+	ctx.JSON(
+		http.StatusOK,
+		centrifugo.NewResponse(userdomain.CentrifugoConnectResponse{
+			User:     claims.Subject,
+			ExpireAt: time.Now().Add(userdomain.UserPingInterval).Unix(),
+		}),
+	)
+}
+
+func (e *HttpEndpoint) centrifugoRefresh(ctx *gin.Context) {
+	claims, err := authtransport.ExtractAndValidateToken(ctx, e.jwtService)
+	if err != nil {
+		ctx.JSON(http.StatusOK, userdomain.CentrifugoUnauthorizedResponse)
+
+		return
+	}
+
+	if err := e.service.UpdateStatus(ctx, claims.Subject, userdomain.StatusOnline, true); err != nil {
+		transport.HttpHandleError(ctx, err)
+
+		return
+	}
+
+	ctx.JSON(
+		http.StatusOK,
+		centrifugo.NewResponse(userdomain.CentrifugoRefreshResponse{
+			ExpireAt: time.Now().Add(userdomain.UserPingInterval).Unix(),
+		}),
+	)
 }

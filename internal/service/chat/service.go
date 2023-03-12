@@ -2,11 +2,17 @@ package chatservice
 
 import (
 	"context"
+	"time"
+
+	"go.uber.org/zap"
+
 	"github.com/undefined7887/harmony-backend/internal/domain"
 	chatdomain "github.com/undefined7887/harmony-backend/internal/domain/chat"
 	userdomain "github.com/undefined7887/harmony-backend/internal/domain/user"
+	zaplog "github.com/undefined7887/harmony-backend/internal/infrastructure/log/zap"
+	"github.com/undefined7887/harmony-backend/internal/repository"
 	"github.com/undefined7887/harmony-backend/internal/third_party/centrifugo"
-	"time"
+	"github.com/undefined7887/harmony-backend/internal/util"
 )
 
 type Service struct {
@@ -31,14 +37,14 @@ func NewService(
 	}
 }
 
-func (s *Service) CreateMessage(ctx context.Context, userID, peerID, peerType, text string) (*chatdomain.Message, error) {
+func (s *Service) CreateMessage(ctx context.Context, userID, peerID, peerType, text string) (chatdomain.MessageDTO, error) {
 	if err := s.checkPeer(ctx, peerID, peerType); err != nil {
-		return nil, err
+		return chatdomain.MessageDTO{}, err
 	}
 
 	now := time.Now()
 
-	message := &chatdomain.Message{
+	message := chatdomain.Message{
 		ID:          domain.ID(),
 		UserID:      userID,
 		PeerID:      peerID,
@@ -47,35 +53,38 @@ func (s *Service) CreateMessage(ctx context.Context, userID, peerID, peerType, t
 		Text:        text,
 		ReadUserIDs: []string{}, // Required to be not nil
 		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
 
-	if _, err := s.messageRepository.Create(ctx, message); err != nil {
-		return nil, err
+	if _, err := s.messageRepository.Create(ctx, &message); err != nil {
+		return chatdomain.MessageDTO{}, err
 	}
 
 	switch peerType {
 	case chatdomain.PeerTypeUser:
-		channel := chatdomain.Channel(chatdomain.ChannelMessageCreated, message.PeerID)
-
-		if _, err := s.centrifugoClient.Publish(ctx, channel, message.DTO()); err != nil {
-			return nil, err
-		}
+		s.centrifugoPublish(
+			ctx,
+			chatdomain.ChannelMessageNew(peerID),
+			chatdomain.NewMessageNotification{
+				MessageDTO: chatdomain.MapMessageDTO(message),
+			},
+		)
 
 	default:
-		return nil, domain.ErrNotImplemented()
+		return chatdomain.MessageDTO{}, domain.ErrNotImplemented()
 	}
 
-	return message, nil
+	return chatdomain.MapMessageDTO(message), nil
 }
 
-func (s *Service) GetMessage(ctx context.Context, userID, id string) (*chatdomain.Message, error) {
+func (s *Service) GetMessage(ctx context.Context, userID, id string) (chatdomain.MessageDTO, error) {
 	message, err := s.messageRepository.Get(ctx, id)
-	if err != nil {
-		return nil, err
+	if repository.IsNoDocumentsErr(err) {
+		return chatdomain.MessageDTO{}, chatdomain.ErrMessageNotFound()
 	}
 
-	if message == nil {
-		return nil, chatdomain.ErrMessageNotFound()
+	if err != nil {
+		return chatdomain.MessageDTO{}, err
 	}
 
 	switch message.PeerType {
@@ -84,21 +93,21 @@ func (s *Service) GetMessage(ctx context.Context, userID, id string) (*chatdomai
 
 		// Checking that user is participant of this chat
 		if chatID != message.ChatID {
-			return nil, domain.ErrForbidden()
+			return chatdomain.MessageDTO{}, domain.ErrForbidden()
 		}
 
 	case chatdomain.PeerTypeGroup:
-		return nil, domain.ErrNotImplemented()
+		return chatdomain.MessageDTO{}, domain.ErrNotImplemented()
 	}
 
-	return message, nil
+	return chatdomain.MapMessageDTO(message), nil
 }
 
 func (s *Service) ListMessages(
 	ctx context.Context,
 	userID, peerID, peerType string,
 	offset, limit int64,
-) ([]chatdomain.Message, error) {
+) ([]chatdomain.MessageDTO, error) {
 	chatID := chatdomain.ChatID(userID, peerID, peerType)
 
 	messages, err := s.messageRepository.List(ctx, chatID, offset, limit)
@@ -110,39 +119,41 @@ func (s *Service) ListMessages(
 		return nil, chatdomain.ErrMessageNotFound()
 	}
 
-	return messages, nil
+	return util.Map(messages, chatdomain.MapMessageDTO), nil
 }
 
-func (s *Service) UpdateMessage(ctx context.Context, userID, id, text string) (*chatdomain.Message, error) {
+func (s *Service) UpdateMessage(ctx context.Context, userID, id, text string) (chatdomain.MessageDTO, error) {
 	updatedMessage, err := s.messageRepository.UpdateText(ctx, id, userID, text)
-	if err != nil {
-		return nil, err
+	if repository.IsNoDocumentsErr(err) {
+		return chatdomain.MessageDTO{}, chatdomain.ErrMessageNotFound()
 	}
 
-	if updatedMessage == nil {
-		return nil, chatdomain.ErrMessageNotFound()
+	if err != nil {
+		return chatdomain.MessageDTO{}, err
 	}
 
 	switch updatedMessage.PeerType {
 	case chatdomain.PeerTypeUser:
-		channel := chatdomain.Channel(chatdomain.ChannelMessageUpdated, updatedMessage.PeerID)
-
-		if _, err := s.centrifugoClient.Publish(ctx, channel, updatedMessage.DTO()); err != nil {
-			return nil, err
-		}
+		s.centrifugoPublish(
+			ctx,
+			chatdomain.ChannelMessageUpdates(updatedMessage.PeerID),
+			chatdomain.UpdateMessageNotification{
+				MessageDTO: chatdomain.MapMessageDTO(updatedMessage),
+			},
+		)
 
 	default:
-		return nil, domain.ErrNotImplemented()
+		return chatdomain.MessageDTO{}, domain.ErrNotImplemented()
 	}
 
-	return updatedMessage, nil
+	return chatdomain.MapMessageDTO(updatedMessage), nil
 }
 
 func (s *Service) ListChats(
 	ctx context.Context,
 	userID, peerType string,
 	offset, limit int64,
-) ([]chatdomain.Chat, error) {
+) ([]chatdomain.ChatDTO, error) {
 	chats, err := s.chatRepository.List(ctx, userID, peerType, offset, limit)
 	if err != nil {
 		return nil, err
@@ -152,7 +163,7 @@ func (s *Service) ListChats(
 		return nil, chatdomain.ErrChatsNotFound()
 	}
 
-	return chats, nil
+	return util.Map(chats, chatdomain.MapChatDTO), nil
 }
 
 func (s *Service) UpdateChatRead(ctx context.Context, userID, peerID, peerType string) error {
@@ -169,16 +180,15 @@ func (s *Service) UpdateChatRead(ctx context.Context, userID, peerID, peerType s
 
 	switch peerType {
 	case chatdomain.PeerTypeUser:
-		channel := chatdomain.Channel(chatdomain.ChannelRead, peerID)
-
-		_, err := s.centrifugoClient.Publish(ctx, channel, chatdomain.ReadDTO{
-			UserID:   userID,
-			PeerID:   peerID,
-			PeerType: peerType,
-		})
-		if err != nil {
-			return err
-		}
+		s.centrifugoPublish(
+			ctx,
+			chatdomain.ChannelReadUpdates(peerID),
+			chatdomain.UpdateChatReadNotification{
+				UserID:   userID,
+				PeerID:   peerID,
+				PeerType: peerType,
+			},
+		)
 
 	default:
 		return domain.ErrNotImplemented()
@@ -194,17 +204,16 @@ func (s *Service) UpdateChatTyping(ctx context.Context, userID, peerID, peerType
 
 	switch peerType {
 	case chatdomain.PeerTypeUser:
-		channel := chatdomain.Channel(chatdomain.ChannelTyping, peerID)
-
-		_, err := s.centrifugoClient.Publish(ctx, channel, chatdomain.TypingDTO{
-			UserID:   userID,
-			PeerID:   peerID,
-			PeerType: peerType,
-			Typing:   typing,
-		})
-		if err != nil {
-			return err
-		}
+		s.centrifugoPublish(
+			ctx,
+			chatdomain.ChannelTypingUpdates(peerID),
+			chatdomain.UpdateChatTypingNotification{
+				UserID:   userID,
+				PeerID:   peerID,
+				PeerType: peerType,
+				Typing:   typing,
+			},
+		)
 
 	default:
 		return domain.ErrNotImplemented()
@@ -230,4 +239,16 @@ func (s *Service) checkPeer(ctx context.Context, peerID, peerType string) error 
 	}
 
 	return nil
+}
+
+func (s *Service) centrifugoPublish(ctx context.Context, channel string, data any) {
+	if _, err := s.centrifugoClient.Publish(ctx, channel, data); err != nil {
+		zaplog.
+			UnpackLogger(ctx).
+			Warn(
+				"centrifugo publish error",
+				zap.String("channel", channel),
+				zap.Error(err),
+			)
+	}
 }

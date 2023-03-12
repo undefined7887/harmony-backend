@@ -2,15 +2,17 @@ package chatrepo
 
 import (
 	"context"
-	chatdomain "github.com/undefined7887/harmony-backend/internal/domain/chat"
-	mongodatabase "github.com/undefined7887/harmony-backend/internal/infrastructure/database/mongo"
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
-	"time"
+
+	chatdomain "github.com/undefined7887/harmony-backend/internal/domain/chat"
+	mongodatabase "github.com/undefined7887/harmony-backend/internal/infrastructure/database/mongo"
 )
 
 const (
@@ -61,7 +63,7 @@ func (m *MongoMessageRepository) Create(ctx context.Context, message *chatdomain
 		InsertOne(ctx, message)
 }
 
-func (m *MongoMessageRepository) Get(ctx context.Context, id string) (*chatdomain.Message, error) {
+func (m *MongoMessageRepository) Get(ctx context.Context, id string) (chatdomain.Message, error) {
 	return mongodatabase.
 		NewQuery[chatdomain.Message](m.database.Collection(messageCollection)).
 		FindOne(ctx, bson.M{
@@ -85,7 +87,7 @@ func (m *MongoMessageRepository) List(ctx context.Context, chatID string, offset
 		)
 }
 
-func (m *MongoMessageRepository) UpdateText(ctx context.Context, id, userID, text string) (*chatdomain.Message, error) {
+func (m *MongoMessageRepository) UpdateText(ctx context.Context, id, userID, text string) (chatdomain.Message, error) {
 	return mongodatabase.
 		NewQuery[chatdomain.Message](m.database.Collection(messageCollection)).
 		FindOneAndUpdate(ctx,
@@ -98,6 +100,7 @@ func (m *MongoMessageRepository) UpdateText(ctx context.Context, id, userID, tex
 			bson.M{
 				"$set": bson.M{
 					"text":       text,
+					"edited":     true,
 					"updated_at": time.Now(),
 				},
 			},

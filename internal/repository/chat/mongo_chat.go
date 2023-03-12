@@ -2,11 +2,13 @@ package chatrepo
 
 import (
 	"context"
-	chatdomain "github.com/undefined7887/harmony-backend/internal/domain/chat"
-	mongodatabase "github.com/undefined7887/harmony-backend/internal/infrastructure/database/mongo"
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"time"
+
+	chatdomain "github.com/undefined7887/harmony-backend/internal/domain/chat"
+	mongodatabase "github.com/undefined7887/harmony-backend/internal/infrastructure/database/mongo"
 )
 
 type MongoChatRepository struct {
