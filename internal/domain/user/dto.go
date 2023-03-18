@@ -34,8 +34,8 @@ type GetUserResponse struct {
 
 // ---
 
-type GetUserByNicknameRequestBody struct {
-	Nickname string `json:"nickname" binding:"nickname"`
+type GetUserByNicknameRequestQuery struct {
+	Nickname string `form:"nickname" binding:"nickname-extended"`
 }
 
 type GetUserByNicknameResponse struct {

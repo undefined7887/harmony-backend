@@ -45,6 +45,10 @@ type Http struct {
 	ReadTimeout  time.Duration `yaml:"read_timeout"`
 	WriteTimeout time.Duration `yaml:"write_timeout"`
 	IdleTimeout  time.Duration `yaml:"idle_timeout"`
+
+	// CORS settings
+	CorsAllowOrigins     []string `yaml:"cors_allow_origins"`
+	CorsAllowCredentials bool     `yaml:"cors_allow_credentials"`
 }
 
 type Mongo struct {

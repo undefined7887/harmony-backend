@@ -2,12 +2,14 @@ package authtransport
 
 import (
 	"errors"
-	"net/http"
-
 	"github.com/gin-gonic/gin"
+	"github.com/undefined7887/harmony-backend/internal/domain"
 	authdomain "github.com/undefined7887/harmony-backend/internal/domain/auth"
+	zaplog "github.com/undefined7887/harmony-backend/internal/infrastructure/log/zap"
 	jwtservice "github.com/undefined7887/harmony-backend/internal/service/jwt"
+	"github.com/undefined7887/harmony-backend/internal/transport"
 	"github.com/undefined7887/harmony-backend/internal/util/http"
+	"go.uber.org/zap"
 )
 
 const (
@@ -22,7 +24,7 @@ func NewHttpAuthMiddleware(jwtService *jwtservice.Service) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		claims, err := ExtractAndValidateToken(ctx, jwtService)
 		if err != nil {
-			_ = ctx.AbortWithError(http.StatusUnauthorized, err)
+			transport.HttpHandleError(ctx, domain.ErrUnauthorized())
 
 			return
 		}
@@ -44,6 +46,18 @@ func ExtractAndValidateToken(ctx *gin.Context, jwtService *jwtservice.Service) (
 
 		if err := ctx.ShouldBindQuery(&query); err == nil {
 			token = query.Token
+		}
+	}
+
+	if token == "" {
+		var err error
+
+		// Trying to get token from 'token' cookie
+		token, err = ctx.Cookie("token")
+		if err != nil {
+			zaplog.
+				UnpackLogger(ctx).
+				Info("failed to get token from cookie", zap.Error(err))
 		}
 	}
 

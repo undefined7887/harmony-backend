@@ -39,7 +39,7 @@ func NewService(
 	}
 }
 
-func (s *Service) GoogleSignUp(ctx context.Context, idtoken, nickname string) (authdomain.AuthDTO, error) {
+func (s *Service) GoogleSignUp(ctx context.Context, nonce, idtoken, nickname string) (authdomain.AuthDTO, error) {
 	claims, err := s.googleAuthService.Auth(ctx, idtoken)
 	if err != nil {
 		return authdomain.AuthDTO{}, authdomain.ErrWrongGoogleToken()
@@ -47,6 +47,10 @@ func (s *Service) GoogleSignUp(ctx context.Context, idtoken, nickname string) (a
 
 	if !claims.EmailVerified {
 		return authdomain.AuthDTO{}, authdomain.ErrEmailNotVerified()
+	}
+
+	if claims.Nonce != nonce {
+		return authdomain.AuthDTO{}, authdomain.ErrWrongGoogleTokenMalformed()
 	}
 
 	now := time.Now()
@@ -71,15 +75,23 @@ func (s *Service) GoogleSignUp(ctx context.Context, idtoken, nickname string) (a
 	}
 
 	return authdomain.AuthDTO{
-		UserID:    user.ID,
+		User:      userdomain.MapUserDTO(user),
 		UserToken: s.createToken(&user),
 	}, nil
 }
 
-func (s *Service) GoogleSignIn(ctx context.Context, idtoken string) (authdomain.AuthDTO, error) {
+func (s *Service) GoogleSignIn(ctx context.Context, nonce, idtoken string) (authdomain.AuthDTO, error) {
 	claims, err := s.googleAuthService.Auth(ctx, idtoken)
 	if err != nil {
 		return authdomain.AuthDTO{}, authdomain.ErrWrongGoogleToken()
+	}
+
+	if !claims.EmailVerified {
+		return authdomain.AuthDTO{}, authdomain.ErrEmailNotVerified()
+	}
+
+	if claims.Nonce != nonce {
+		return authdomain.AuthDTO{}, authdomain.ErrWrongGoogleTokenMalformed()
 	}
 
 	user, err := s.userRepository.GetByEmail(ctx, claims.Email)
@@ -92,7 +104,7 @@ func (s *Service) GoogleSignIn(ctx context.Context, idtoken string) (authdomain.
 	}
 
 	return authdomain.AuthDTO{
-		UserID:    user.ID,
+		User:      userdomain.MapUserDTO(user),
 		UserToken: s.createToken(&user),
 	}, nil
 }

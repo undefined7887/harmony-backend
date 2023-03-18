@@ -74,6 +74,7 @@ func HttpHandleError(ctx *gin.Context, err error) {
 }
 
 type HttpServer struct {
+	config *config.Http
 	logger *zap.Logger
 	inner  *http.Server
 }
@@ -84,6 +85,7 @@ func NewHttpServer(
 	endpoints []HttpEndpoint,
 ) *HttpServer {
 	server := &HttpServer{
+		config: config,
 		logger: logger,
 	}
 
@@ -151,6 +153,7 @@ func (s *HttpServer) handler(endpoints []HttpEndpoint) http.Handler {
 
 	// Global middlewares
 	engine.Use(NewHttpLoggerMiddleware(s.logger))
+	engine.Use(CORSMiddleware(s.config))
 
 	v1 := engine.Group("/api/v1")
 	{

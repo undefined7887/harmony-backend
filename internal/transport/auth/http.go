@@ -34,7 +34,7 @@ func (e *HttpEndpoint) googleSignUp(ctx *gin.Context) {
 		return
 	}
 
-	auth, err := e.service.GoogleSignUp(ctx, body.Idtoken, body.Nickname)
+	auth, err := e.service.GoogleSignUp(ctx, body.Nonce, body.Idtoken, body.Nickname)
 	if err != nil {
 		transport.HttpHandleError(ctx, err)
 
@@ -53,7 +53,7 @@ func (e *HttpEndpoint) googleSignIn(ctx *gin.Context) {
 		return
 	}
 
-	auth, err := e.service.GoogleSignIn(ctx, body.Idtoken)
+	auth, err := e.service.GoogleSignIn(ctx, body.Nonce, body.Idtoken)
 	if err != nil {
 		transport.HttpHandleError(ctx, err)
 

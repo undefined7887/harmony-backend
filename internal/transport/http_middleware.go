@@ -1,6 +1,8 @@
 package transport
 
 import (
+	"github.com/gin-contrib/cors"
+	"github.com/undefined7887/harmony-backend/internal/config"
 	"net/http"
 	"time"
 
@@ -43,6 +45,16 @@ func NewHttpLoggerMiddleware(logger *zap.Logger) gin.HandlerFunc {
 			logger.Info("request processed")
 		}
 	}
+}
+
+func CORSMiddleware(httpConfig *config.Http) gin.HandlerFunc {
+	corsConfig := cors.DefaultConfig()
+
+	// Overriding default settings
+	corsConfig.AllowOrigins = httpConfig.CorsAllowOrigins
+	corsConfig.AllowCredentials = httpConfig.CorsAllowCredentials
+
+	return cors.New(corsConfig)
 }
 
 func toErrorsSlice(errors []*gin.Error) []error {

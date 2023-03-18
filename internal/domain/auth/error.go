@@ -19,6 +19,15 @@ func ErrWrongGoogleToken() *domain.Error {
 	}
 }
 
+func ErrWrongGoogleTokenMalformed() *domain.Error {
+	return &domain.Error{
+		StatusCode: http.StatusForbidden,
+
+		Code: ErrIndex + 2,
+		Name: "ERR_WRONG_GOOGLE_MALFORMED",
+	}
+}
+
 func ErrEmailNotVerified() *domain.Error {
 	return &domain.Error{
 		StatusCode: http.StatusBadRequest,

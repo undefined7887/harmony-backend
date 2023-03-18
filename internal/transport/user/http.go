@@ -71,13 +71,13 @@ func (e *HttpEndpoint) getUser(ctx *gin.Context) {
 }
 
 func (e *HttpEndpoint) getUserByNickname(ctx *gin.Context) {
-	var body userdomain.GetUserByNicknameRequestBody
+	var params userdomain.GetUserByNicknameRequestQuery
 
-	if !transport.HttpBindJSON(ctx, &body) {
+	if !transport.HttpBindQuery(ctx, &params) {
 		return
 	}
 
-	user, err := e.service.GetUserByNickname(ctx, body.Nickname)
+	user, err := e.service.GetUserByNickname(ctx, params.Nickname)
 	if err != nil {
 		transport.HttpHandleError(ctx, err)
 

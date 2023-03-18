@@ -12,10 +12,10 @@ const (
 )
 
 var (
-	Nickname       = "^[A-z0-9_.]{4,30}$"
+	Nickname       = "^[A-z0-9-_.]{4,30}$"
 	NicknameRegexp = regexp.MustCompile(Nickname)
 
-	NicknameExtended       = "^[A-z0-9_.]{4,30}#[0-9]{4}$"
+	NicknameExtended       = "^[A-z0-9-_.]{4,30}#[0-9]{4}$"
 	NicknameExtendedRegexp = regexp.MustCompile(NicknameExtended)
 )
 
