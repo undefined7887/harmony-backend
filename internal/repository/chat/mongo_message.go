@@ -72,18 +72,23 @@ func (m *MongoMessageRepository) Get(ctx context.Context, id string) (chatdomain
 }
 
 func (m *MongoMessageRepository) List(ctx context.Context, chatID string, offset, limit int64) ([]chatdomain.Message, error) {
+	listOptions := options.Find()
+
+	if offset > 0 {
+		listOptions.SetSkip(offset)
+	}
+
+	if limit > 0 {
+		listOptions.SetLimit(limit)
+	}
+
 	return mongodatabase.
 		NewQuery[chatdomain.Message](m.database.Collection(messageCollection)).
 		Find(ctx,
 			bson.M{
 				"chat_id": chatID,
 			},
-			options.Find().
-				SetSort(bson.M{
-					"created_at": -1,
-				}).
-				SetSkip(offset).
-				SetLimit(limit),
+			listOptions,
 		)
 }
 

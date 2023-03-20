@@ -87,6 +87,27 @@ func (m *MongoRepository) Exists(ctx context.Context, id string) (bool, error) {
 		})
 }
 
+func (m *MongoRepository) UpdatePhoto(ctx context.Context, id, photo string) (userdomain.User, error) {
+	return mongodatabase.
+		NewQuery[userdomain.User](m.database.Collection(userCollection)).
+		FindOneAndUpdate(ctx,
+			bson.M{
+				"_id": id,
+			},
+			bson.A{
+				bson.M{
+					"$set": bson.M{
+						"photo":      photo,
+						"updated_at": time.Now(),
+					},
+				},
+			},
+			options.
+				FindOneAndUpdate().
+				SetReturnDocument(options.After),
+		)
+}
+
 func (m *MongoRepository) UpdateStatus(ctx context.Context, id, status string, onlyOffline bool) (userdomain.User, error) {
 	var statusSet any = status
 

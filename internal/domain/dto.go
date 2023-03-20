@@ -6,5 +6,5 @@ type IdParam struct {
 
 type PaginationQuery struct {
 	Offset int64 `form:"offset" binding:"min=0"`
-	Limit  int64 `form:"limit,default=100" binding:"min=1"`
+	Limit  int64 `form:"limit" binding:"min=0"`
 }

@@ -11,6 +11,7 @@ type Repository interface {
 
 	Exists(ctx context.Context, id string) (bool, error)
 
+	UpdatePhoto(ctx context.Context, id, photo string) (User, error)
 	UpdateStatus(ctx context.Context, id, status string, onlyOffline bool) (User, error)
 
 	// UpdateOutdatedStatuses sets status 'offline' to users who weren't updated for 1 minute

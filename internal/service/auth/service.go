@@ -103,6 +103,11 @@ func (s *Service) GoogleSignIn(ctx context.Context, nonce, idtoken string) (auth
 		return authdomain.AuthDTO{}, err
 	}
 
+	// Updating photo from Google
+	if _, err := s.userRepository.UpdatePhoto(ctx, user.ID, claims.Picture); err != nil {
+		return authdomain.AuthDTO{}, err
+	}
+
 	return authdomain.AuthDTO{
 		User:      userdomain.MapUserDTO(user),
 		UserToken: s.createToken(&user),
