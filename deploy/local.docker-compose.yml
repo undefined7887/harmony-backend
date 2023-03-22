@@ -2,23 +2,25 @@ name: harmony
 
 services:
   centrifugo:
-    image: centrifugo/centrifugo:latest
+    image: centrifugo/centrifugo:v4.1
     command: centrifugo --config=config.yml
-    network_mode: host
+    ports:
+      - "8000:8000"
     volumes:
       - "./centrifugo/config.yml:/centrifugo/config.yml"
 
   mongo:
     restart: always
-    image: bitnami/mongodb:5.0.6
+    image: mongo:6.0.5
+    command: --replSet rs0
     environment:
-      - ALLOW_EMPTY_PASSWORD=yes
-      - MONGODB_REPLICA_SET_MODE=primary
-      - MONGODB_ADVERTISED_HOSTNAME=localhost
-      - MONGODB_ADVERTISED_PORT_NUMBER=27017
-    network_mode: host
+      - MONGO_REPLICA_SET_NAME=rs0
+    ports:
+      - "27017:27017"
     volumes:
-      - mongo-data:/bitnami/mongodb
+      - mongo-data:/data/db
+      - mongo-config:/data/configdb
 
 volumes:
   mongo-data:
+  mongo-config:

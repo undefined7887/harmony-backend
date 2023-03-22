@@ -32,7 +32,7 @@ type MessageDTO struct {
 	Text        string    `json:"text"`
 	Edited      bool      `json:"edited"`
 	Attachments []string  `json:"attachments,omitempty"`
-	ReadUserIDs []string  `json:"read_user_ids,omitempty"`
+	ReadUserIDs []string  `json:"read_user_ids"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }

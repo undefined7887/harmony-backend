@@ -72,7 +72,9 @@ func (m *MongoMessageRepository) Get(ctx context.Context, id string) (chatdomain
 }
 
 func (m *MongoMessageRepository) List(ctx context.Context, chatID string, offset, limit int64) ([]chatdomain.Message, error) {
-	listOptions := options.Find()
+	listOptions := options.
+		Find().
+		SetSort(bson.M{"created_at": -1})
 
 	if offset > 0 {
 		listOptions.SetSkip(offset)

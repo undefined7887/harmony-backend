@@ -62,6 +62,16 @@ func (s *Service) CreateMessage(ctx context.Context, userID, peerID, peerType, t
 
 	switch peerType {
 	case chatdomain.PeerTypeUser:
+		// Publishing for current user
+		s.centrifugoPublish(
+			ctx,
+			chatdomain.ChannelMessageNew(userID),
+			chatdomain.NewMessageNotification{
+				MessageDTO: chatdomain.MapMessageDTO(message),
+			},
+		)
+
+		// Publishing for peer
 		s.centrifugoPublish(
 			ctx,
 			chatdomain.ChannelMessageNew(peerID),
@@ -134,6 +144,16 @@ func (s *Service) UpdateMessage(ctx context.Context, userID, id, text string) (c
 
 	switch updatedMessage.PeerType {
 	case chatdomain.PeerTypeUser:
+		// Publishing for current user
+		s.centrifugoPublish(
+			ctx,
+			chatdomain.ChannelMessageNew(userID),
+			chatdomain.NewMessageNotification{
+				MessageDTO: chatdomain.MapMessageDTO(updatedMessage),
+			},
+		)
+
+		// Publishing for peer
 		s.centrifugoPublish(
 			ctx,
 			chatdomain.ChannelMessageUpdates(updatedMessage.PeerID),
