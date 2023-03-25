@@ -2,6 +2,7 @@ name: harmony
 
 services:
   harmony:
+    restart: always
     build:
       context: ..
     ports:
@@ -13,6 +14,7 @@ services:
       - centrifugo
 
   centrifugo:
+    restart: always
     image: centrifugo/centrifugo:v4.1
     command: centrifugo --config=config.yml
     ports:
@@ -23,13 +25,12 @@ services:
   mongo:
     restart: always
     image: mongo:6.0.5
-    command: --replSet rs0
+    command: --replSet rs0 --bind_ip_all
     ports:
       - "127.0.0.1:27017:27017"
     volumes:
-      - "./mongo/init:/docker-entrypoint-initdb.d"
       - mongo-data:/data/db
-
+      - mongo-config:/data/configdb
 
 volumes:
   mongo-data:
