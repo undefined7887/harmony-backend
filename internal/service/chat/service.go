@@ -200,15 +200,17 @@ func (s *Service) UpdateChatRead(ctx context.Context, userID, peerID, peerType s
 
 	switch peerType {
 	case chatdomain.PeerTypeUser:
-		s.centrifugoPublish(
-			ctx,
-			chatdomain.ChannelReadUpdates(peerID),
-			chatdomain.UpdateChatReadNotification{
-				UserID:   userID,
-				PeerID:   peerID,
-				PeerType: peerType,
-			},
-		)
+		data := chatdomain.UpdateChatReadNotification{
+			UserID:   userID,
+			PeerID:   peerID,
+			PeerType: peerType,
+		}
+
+		// Publishing for current user
+		s.centrifugoPublish(ctx, chatdomain.ChannelReadUpdates(userID), data)
+
+		// Publishing for peer
+		s.centrifugoPublish(ctx, chatdomain.ChannelReadUpdates(peerID), data)
 
 	default:
 		return domain.ErrNotImplemented()

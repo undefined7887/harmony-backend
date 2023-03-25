@@ -61,7 +61,7 @@ func (s *Service) GetUser(ctx context.Context, id string) (userdomain.UserDTO, e
 	return userdomain.MapUserDTO(user), nil
 }
 
-func (s *Service) GetUserByNickname(ctx context.Context, nickname string) (userdomain.UserDTO, error) {
+func (s *Service) SearchUser(ctx context.Context, nickname string) (userdomain.UserDTO, error) {
 	user, err := s.userRepository.GetByNickname(ctx, nickname)
 	if repository.IsNoDocumentsErr(err) {
 		return userdomain.UserDTO{}, userdomain.ErrUserNotFound()

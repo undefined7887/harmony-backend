@@ -1,20 +1,25 @@
 package userdomain
 
-import "github.com/undefined7887/harmony-backend/internal/third_party/centrifugo"
+import (
+	"github.com/undefined7887/harmony-backend/internal/third_party/centrifugo"
+	"time"
+)
 
 type UserDTO struct {
-	ID       string `json:"id"`
-	Status   string `json:"status,omitempty"`
-	Photo    string `json:"photo"`
-	Nickname string `json:"nickname"`
+	ID        string    `json:"id"`
+	Status    string    `json:"status,omitempty"`
+	Photo     string    `json:"photo"`
+	Nickname  string    `json:"nickname"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 func MapUserDTO(user User) UserDTO {
 	return UserDTO{
-		ID:       user.ID,
-		Status:   user.Status,
-		Photo:    user.Photo,
-		Nickname: user.Nickname,
+		ID:        user.ID,
+		Status:    user.Status,
+		Photo:     user.Photo,
+		Nickname:  user.Nickname,
+		UpdatedAt: user.UpdatedAt,
 	}
 }
 
@@ -45,7 +50,7 @@ type GetUserByNicknameResponse struct {
 // ---
 
 type UpdateUserStatusRequestBody struct {
-	Status string `json:"status" binding:"oneof=online away silence"`
+	Status string `json:"status" binding:"oneof=online away silence offline"`
 }
 
 // ---

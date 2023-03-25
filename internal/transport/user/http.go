@@ -35,7 +35,7 @@ func (e *HttpEndpoint) Register(group *gin.RouterGroup) {
 		Use(authtransport.NewHttpAuthMiddleware(e.jwtService))
 	{
 		userGroup.GET("/:id", e.getUser)
-		userGroup.GET("/nickname", e.getUserByNickname)
+		userGroup.GET("/search", e.searchUser)
 		userGroup.PUT("/status", e.updateUserStatus)
 	}
 
@@ -70,14 +70,14 @@ func (e *HttpEndpoint) getUser(ctx *gin.Context) {
 	})
 }
 
-func (e *HttpEndpoint) getUserByNickname(ctx *gin.Context) {
+func (e *HttpEndpoint) searchUser(ctx *gin.Context) {
 	var params userdomain.GetUserByNicknameRequestQuery
 
 	if !transport.HttpBindQuery(ctx, &params) {
 		return
 	}
 
-	user, err := e.service.GetUserByNickname(ctx, params.Nickname)
+	user, err := e.service.SearchUser(ctx, params.Nickname)
 	if err != nil {
 		transport.HttpHandleError(ctx, err)
 
@@ -98,7 +98,6 @@ func (e *HttpEndpoint) updateUserStatus(ctx *gin.Context) {
 
 	userID := authtransport.GetClaims(ctx).Subject
 
-	// We can update to 'online', 'away' and 'silence' statuses
 	if err := e.service.UpdateStatus(ctx, userID, body.Status, false); err != nil {
 		transport.HttpHandleError(ctx, err)
 
