@@ -13,13 +13,11 @@ services:
     restart: always
     image: mongo:6.0.5
     command: --replSet rs0
-    environment:
-      - MONGO_REPLICA_SET_NAME=rs0
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
     volumes:
+      - "./mongo/init:/docker-entrypoint-initdb.d"
       - mongo-data:/data/db
-      - mongo-config:/data/configdb
 
 volumes:
   mongo-data:

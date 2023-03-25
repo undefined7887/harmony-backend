@@ -47,10 +47,14 @@ func NewDatabaseRunner(
 			client := database.Client()
 
 			if err := client.Connect(ctx); err != nil {
-				return err
+				return fmt.Errorf("mongo: %v", err)
 			}
 
-			return client.Ping(ctx, nil)
+			if err := client.Ping(ctx, nil); err != nil {
+				return fmt.Errorf("mongo: %v", err)
+			}
+
+			return nil
 		},
 
 		OnStop: func(ctx context.Context) error {
