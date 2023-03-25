@@ -1,6 +1,7 @@
 package usertransport
 
 import (
+	"github.com/undefined7887/harmony-backend/internal/domain"
 	"net/http"
 	"time"
 
@@ -118,6 +119,12 @@ func (e *HttpEndpoint) centrifugoConnect(ctx *gin.Context) {
 	}
 
 	if err := e.service.UpdateStatus(ctx, claims.Subject, userdomain.StatusOnline, true); err != nil {
+		if domain.IsError(err, userdomain.ErrUserNotFound()) {
+			ctx.JSON(http.StatusOK, userdomain.CentrifugoUnauthorizedResponse)
+
+			return
+		}
+
 		transport.HttpHandleError(ctx, err)
 
 		return
@@ -141,6 +148,12 @@ func (e *HttpEndpoint) centrifugoRefresh(ctx *gin.Context) {
 	}
 
 	if err := e.service.UpdateStatus(ctx, claims.Subject, userdomain.StatusOnline, true); err != nil {
+		if domain.IsError(err, userdomain.ErrUserNotFound()) {
+			ctx.JSON(http.StatusOK, userdomain.CentrifugoUnauthorizedResponse)
+
+			return
+		}
+
 		transport.HttpHandleError(ctx, err)
 
 		return

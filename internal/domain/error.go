@@ -18,6 +18,11 @@ func (e *Error) Error() string {
 	return fmt.Sprintf("api error code: %d, name: %s", e.Code, e.Name)
 }
 
+func IsError(err1 error, err2 *Error) bool {
+	domainErr, ok := err1.(*Error)
+	return ok && domainErr.Code == err2.Code
+}
+
 func ErrUnauthorized() *Error {
 	return &Error{
 		StatusCode: http.StatusUnauthorized,
