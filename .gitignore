@@ -7,3 +7,6 @@ config/secrets/*.pem
 
 # Centrifugo deploy
 deploy/centrifugo/config.yml
+
+# Bin
+harmony
