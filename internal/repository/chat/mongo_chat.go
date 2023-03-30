@@ -102,6 +102,11 @@ func (m *MongoChatRepository) List(ctx context.Context, userID, peerType string,
 			},
 		},
 		bson.M{
+			"$sort": bson.M{
+				"message.created_at": -1,
+			},
+		},
+		bson.M{
 			"$project": bson.M{
 				"chat": bson.M{
 					"$mergeObjects": bson.A{
@@ -155,8 +160,8 @@ func (m *MongoChatRepository) List(ctx context.Context, userID, peerType string,
 }
 
 func (m *MongoChatRepository) UpdateRead(ctx context.Context, userID, chatID string) (int64, error) {
-	return mongodatabase.
-		NewQuery[chatdomain.Message](m.database.Collection(messageCollection)).
+	result, err := m.database.
+		Collection(messageCollection).
 		UpdateMany(ctx,
 			bson.M{
 				"chat_id": chatID,
@@ -178,4 +183,10 @@ func (m *MongoChatRepository) UpdateRead(ctx context.Context, userID, chatID str
 				},
 			},
 		)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return result.ModifiedCount, nil
 }

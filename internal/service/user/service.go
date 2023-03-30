@@ -74,7 +74,7 @@ func (s *Service) SearchUser(ctx context.Context, nickname string) (userdomain.U
 	return userdomain.MapUserDTO(user), nil
 }
 
-func (s *Service) UpdateStatus(ctx context.Context, userID, status string, onlyOffline bool) error {
+func (s *Service) UpdateUserStatus(ctx context.Context, userID, status string, onlyOffline bool) error {
 	user, err := s.userRepository.UpdateStatus(ctx, userID, status, onlyOffline)
 	if repository.IsNoDocumentsErr(err) {
 		return userdomain.ErrUserNotFound()

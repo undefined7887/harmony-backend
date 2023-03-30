@@ -32,7 +32,7 @@ func ErrEmailNotVerified() *domain.Error {
 	return &domain.Error{
 		StatusCode: http.StatusBadRequest,
 
-		Code: ErrIndex + 2,
+		Code: ErrIndex + 3,
 		Name: "ERR_EMAIL_NOT_VERIFIED",
 	}
 }

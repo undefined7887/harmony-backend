@@ -99,7 +99,7 @@ func (e *HttpEndpoint) updateUserStatus(ctx *gin.Context) {
 
 	userID := authtransport.GetClaims(ctx).Subject
 
-	if err := e.service.UpdateStatus(ctx, userID, body.Status, false); err != nil {
+	if err := e.service.UpdateUserStatus(ctx, userID, body.Status, false); err != nil {
 		transport.HttpHandleError(ctx, err)
 
 		return
@@ -118,7 +118,7 @@ func (e *HttpEndpoint) centrifugoConnect(ctx *gin.Context) {
 		return
 	}
 
-	if err := e.service.UpdateStatus(ctx, claims.Subject, userdomain.StatusOnline, true); err != nil {
+	if err := e.service.UpdateUserStatus(ctx, claims.Subject, userdomain.StatusOnline, true); err != nil {
 		if domain.IsError(err, userdomain.ErrUserNotFound()) {
 			ctx.JSON(http.StatusOK, userdomain.CentrifugoUnauthorizedResponse)
 
@@ -147,7 +147,7 @@ func (e *HttpEndpoint) centrifugoRefresh(ctx *gin.Context) {
 		return
 	}
 
-	if err := e.service.UpdateStatus(ctx, claims.Subject, userdomain.StatusOnline, true); err != nil {
+	if err := e.service.UpdateUserStatus(ctx, claims.Subject, userdomain.StatusOnline, true); err != nil {
 		if domain.IsError(err, userdomain.ErrUserNotFound()) {
 			ctx.JSON(http.StatusOK, userdomain.CentrifugoUnauthorizedResponse)
 

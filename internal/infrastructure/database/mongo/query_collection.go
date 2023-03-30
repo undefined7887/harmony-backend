@@ -148,15 +148,6 @@ func (q *Query[T]) Aggregate(ctx context.Context, pipeline bson.A, opts ...*opti
 	return result, nil
 }
 
-func (q *Query[T]) UpdateMany(ctx context.Context, filter bson.M, update any, opts ...*options.UpdateOptions) (int64, error) {
-	result, err := q.collection.UpdateMany(ctx, filter, update, opts...)
-	if err != nil {
-		return 0, err
-	}
-
-	return result.ModifiedCount, nil
-}
-
 func (q *Query[T]) FindOneAndUpdate(ctx context.Context, filter bson.M, update any, opts ...*options.FindOneAndUpdateOptions) (T, error) {
 	var result T
 

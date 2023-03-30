@@ -1,6 +1,9 @@
 package main
 
 import (
+	callrepo "github.com/undefined7887/harmony-backend/internal/repository/call"
+	callservice "github.com/undefined7887/harmony-backend/internal/service/call"
+	calltransport "github.com/undefined7887/harmony-backend/internal/transport/call"
 	"os"
 
 	"go.uber.org/fx"
@@ -40,18 +43,21 @@ func NewApp() *fx.App {
 		// Repositories
 		userrepo.Module,
 		chatrepo.Module,
+		callrepo.Module,
 
 		// Services
 		jwtservice.Module,
 		authservice.Module,
 		userservice.Module,
 		chatservice.Module,
+		callservice.Module,
 
 		// Transport
 		transport.Module,
 		authtransport.Module,
 		usertransport.Module,
 		chattransport.Module,
+		calltransport.Module,
 	)
 }
 
