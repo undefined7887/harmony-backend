@@ -5,15 +5,10 @@ import (
 )
 
 type CallDTO struct {
-	ID string `json:"_id"`
-
+	ID     string `json:"id"`
 	UserID string `json:"user_id"`
 	PeerID string `json:"peer_id"`
-
 	Status string `json:"status"`
-
-	// WebRTC data
-	WebRTC CallWebRtcDTO `json:"web_rtc"`
 }
 
 func MapCallDTO(call Call) CallDTO {
@@ -22,19 +17,6 @@ func MapCallDTO(call Call) CallDTO {
 		UserID: call.UserID,
 		PeerID: call.PeerID,
 		Status: call.Status,
-		WebRTC: MapCallWebRtcDTO(call.WebRTC),
-	}
-}
-
-type CallWebRtcDTO struct {
-	Offer  json.RawMessage `json:"offer"`
-	Answer json.RawMessage `json:"answer"`
-}
-
-func MapCallWebRtcDTO(callWebRtc CallWebRTC) CallWebRtcDTO {
-	return CallWebRtcDTO{
-		Offer:  callWebRtc.Offer,
-		Answer: callWebRtc.Answer,
 	}
 }
 
@@ -43,10 +25,6 @@ type PeerParams struct {
 }
 
 // --
-
-type CreateCallRequestBody struct {
-	WebRtcOffer json.RawMessage `json:"web_rtc_offer"`
-}
 
 type CreateCallResponse struct {
 	CallID string `json:"call_id"`
@@ -59,8 +37,7 @@ type NewCallNotification struct {
 // --
 
 type UpdateCallRequestBody struct {
-	Accept       bool            `json:"accept"`
-	WebRtcAnswer json.RawMessage `json:"web_rtc_answer"`
+	Status string `json:"status" binding:"oneof=accepted declined finished"`
 }
 
 type UpdateCallNotification struct {
@@ -70,11 +47,12 @@ type UpdateCallNotification struct {
 // --
 
 type ProxyCallDataRequestBody struct {
-	WebRtcCandidate json.RawMessage `json:"web_rtc_candidate"`
+	Name string          `json:"name"`
+	Data json.RawMessage `json:"data"`
 }
 
 type CallDataNotification struct {
-	ID string `json:"id"`
-
-	WebRtcCandidate json.RawMessage `json:"web_rtc_candidate"`
+	ID   string          `json:"id"`
+	Name string          `json:"name"`
+	Data json.RawMessage `json:"data"`
 }

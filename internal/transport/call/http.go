@@ -5,23 +5,28 @@ import (
 	"github.com/undefined7887/harmony-backend/internal/domain"
 	calldomain "github.com/undefined7887/harmony-backend/internal/domain/call"
 	callservice "github.com/undefined7887/harmony-backend/internal/service/call"
+	jwtservice "github.com/undefined7887/harmony-backend/internal/service/jwt"
 	"github.com/undefined7887/harmony-backend/internal/transport"
 	authtransport "github.com/undefined7887/harmony-backend/internal/transport/auth"
 	"net/http"
 )
 
 type HttpEndpoint struct {
-	service *callservice.Service
+	service    *callservice.Service
+	jwtService *jwtservice.Service
 }
 
-func NewHttpEndpoint(service *callservice.Service) transport.HttpEndpoint {
+func NewHttpEndpoint(service *callservice.Service, jwtService *jwtservice.Service) transport.HttpEndpoint {
 	return &HttpEndpoint{
-		service: service,
+		service:    service,
+		jwtService: jwtService,
 	}
 }
 
 func (e *HttpEndpoint) Register(group *gin.RouterGroup) {
-	callGroup := group.Group("/call")
+	callGroup := group.
+		Group("/call").
+		Use(authtransport.NewHttpAuthMiddleware(e.jwtService))
 	{
 		callGroup.GET("", e.getCall)
 		callGroup.PUT("/:id/status", e.updateCallStatus)
@@ -32,18 +37,15 @@ func (e *HttpEndpoint) Register(group *gin.RouterGroup) {
 }
 
 func (e *HttpEndpoint) createCall(ctx *gin.Context) {
-	var (
-		params calldomain.PeerParams
-		body   calldomain.CreateCallRequestBody
-	)
+	var params calldomain.PeerParams
 
-	if !transport.HttpBind(ctx, &params, &body, nil) {
+	if !transport.HttpBindURI(ctx, &params) {
 		return
 	}
 
 	userID := authtransport.GetClaims(ctx).Subject
 
-	callID, err := e.service.CreateCall(ctx, userID, params.PeerID, body.WebRtcOffer)
+	callID, err := e.service.CreateCall(ctx, userID, params.PeerID)
 	if err != nil {
 		transport.HttpHandleError(ctx, err)
 
@@ -80,7 +82,7 @@ func (e *HttpEndpoint) updateCallStatus(ctx *gin.Context) {
 
 	userID := authtransport.GetClaims(ctx).Subject
 
-	if err := e.service.UpdateCallStatus(ctx, userID, params.ID, body.Accept, body.WebRtcAnswer); err != nil {
+	if err := e.service.UpdateCallStatus(ctx, userID, params.ID, body.Status); err != nil {
 		transport.HttpHandleError(ctx, err)
 
 		return
@@ -101,7 +103,7 @@ func (e *HttpEndpoint) proxyCallData(ctx *gin.Context) {
 
 	userID := authtransport.GetClaims(ctx).Subject
 
-	if err := e.service.ProxyCallData(ctx, userID, params.ID, body.WebRtcCandidate); err != nil {
+	if err := e.service.ProxyCallData(ctx, userID, params.ID, body.Name, body.Data); err != nil {
 		transport.HttpHandleError(ctx, err)
 
 		return

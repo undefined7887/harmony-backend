@@ -2,8 +2,11 @@ package callrepo
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	calldomain "github.com/undefined7887/harmony-backend/internal/domain/call"
 	mongodatabase "github.com/undefined7887/harmony-backend/internal/infrastructure/database/mongo"
+	"github.com/undefined7887/harmony-backend/internal/util"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -104,18 +107,30 @@ func (m *MongoRepository) ReadLast(ctx context.Context, userID, status string) (
 		})
 }
 
-func (m *MongoRepository) UpdateStatus(ctx context.Context, userID, id, status string, webRTC calldomain.CallWebRTC) (calldomain.Call, error) {
+func (m *MongoRepository) UpdateStatus(ctx context.Context, id, peerID string, previousStatuses []string, newStatus string) (calldomain.Call, error) {
+	match := bson.M{
+		"_id": id,
+		"status": bson.M{
+			// Converting to []any
+			"$in": util.Map(previousStatuses, func(item string) any {
+				return item
+			}),
+		},
+	}
+
+	if peerID != "" {
+		match["peer_id"] = peerID
+	}
+
+	res, _ := json.Marshal(match)
+	fmt.Println(string(res))
+
 	return mongodatabase.NewQuery[calldomain.Call](m.database.Collection(callCollection)).
 		FindOneAndUpdate(ctx,
-			bson.M{
-				"_id":     id,
-				"peer_id": userID,
-				"status":  calldomain.StatusRequest,
-			},
+			match,
 			bson.M{
 				"$set": bson.M{
-					"status":  status,
-					"web_rtc": webRTC,
+					"status": newStatus,
 				},
 			},
 			options.

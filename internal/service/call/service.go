@@ -32,7 +32,7 @@ func NewService(
 	}
 }
 
-func (s *Service) CreateCall(ctx context.Context, userID, peerID string, webRtcOffer json.RawMessage) (string, error) {
+func (s *Service) CreateCall(ctx context.Context, userID, peerID string) (string, error) {
 	if err := s.checkPeer(ctx, userID); err != nil {
 		return "", err
 	}
@@ -40,13 +40,10 @@ func (s *Service) CreateCall(ctx context.Context, userID, peerID string, webRtcO
 	now := time.Now()
 
 	call := calldomain.Call{
-		ID:     domain.ID(),
-		UserID: userID,
-		PeerID: peerID,
-		Status: calldomain.StatusRequest,
-		WebRTC: calldomain.CallWebRTC{
-			Offer: webRtcOffer,
-		},
+		ID:        domain.ID(),
+		UserID:    userID,
+		PeerID:    peerID,
+		Status:    calldomain.StatusRequest,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
@@ -84,13 +81,34 @@ func (s *Service) GetCall(ctx context.Context, userID string) (calldomain.CallDT
 	return calldomain.MapCallDTO(call), nil
 }
 
-func (s *Service) UpdateCallStatus(ctx context.Context, userID, id string, accept bool, webRtcAnswer json.RawMessage) error {
-	status := calldomain.StatusDeclined
-	if accept {
-		status = calldomain.StatusAccepted
+func (s *Service) UpdateCallStatus(ctx context.Context, userID, id string, status string) error {
+	var (
+		matchPeerID           string
+		matchPreviousStatuses []string
+	)
+
+	switch status {
+	case calldomain.StatusAccepted:
+		// Call can be accepted only peer
+		matchPeerID = userID
+		matchPreviousStatuses = []string{calldomain.StatusRequest}
+
+	case calldomain.StatusDeclined:
+		// Call can be declined by anyone
+		matchPreviousStatuses = []string{calldomain.StatusRequest}
+
+	case calldomain.StatusFinished:
+		// Call can be finished by anyone
+		matchPreviousStatuses = []string{calldomain.StatusRequest, calldomain.StatusAccepted}
 	}
 
-	call, err := s.callRepository.UpdateStatus(ctx, userID, id, status, calldomain.CallWebRTC{Answer: webRtcAnswer})
+	call, err := s.callRepository.UpdateStatus(
+		ctx,
+		id,
+		matchPeerID,
+		matchPreviousStatuses,
+		status,
+	)
 	if repository.IsNoDocumentsErr(err) {
 		return calldomain.ErrCallNotFound()
 	}
@@ -99,18 +117,25 @@ func (s *Service) UpdateCallStatus(ctx context.Context, userID, id string, accep
 		return err
 	}
 
-	data := calldomain.UpdateCallNotification{
-		CallDTO: calldomain.MapCallDTO(call),
+	peerID := call.PeerID
+
+	// Changing peer if peer is a current user
+	if userID == call.PeerID {
+		peerID = call.UserID
 	}
 
-	// Publishing for both of members
-	s.centrifugoPublish(ctx, calldomain.ChannelCallUpdates(call.UserID), data)
-	s.centrifugoPublish(ctx, calldomain.ChannelCallUpdates(call.PeerID), data)
+	s.centrifugoPublish(
+		ctx,
+		calldomain.ChannelCallUpdates(peerID),
+		calldomain.UpdateCallNotification{
+			CallDTO: calldomain.MapCallDTO(call),
+		},
+	)
 
 	return nil
 }
 
-func (s *Service) ProxyCallData(ctx context.Context, userID, id string, webRtcCandidate json.RawMessage) error {
+func (s *Service) ProxyCallData(ctx context.Context, userID, id, name string, data json.RawMessage) error {
 	call, err := s.callRepository.Read(ctx, id, calldomain.StatusAccepted)
 	if repository.IsNoDocumentsErr(err) {
 		return calldomain.ErrCallNotFound()
@@ -130,9 +155,9 @@ func (s *Service) ProxyCallData(ctx context.Context, userID, id string, webRtcCa
 	s.centrifugoPublish(ctx,
 		calldomain.ChannelCallData(peerID),
 		calldomain.CallDataNotification{
-			ID: call.ID,
-
-			WebRtcCandidate: webRtcCandidate,
+			ID:   call.ID,
+			Name: name,
+			Data: data,
 		},
 	)
 

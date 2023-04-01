@@ -1,7 +1,6 @@
 package calldomain
 
 import (
-	"encoding/json"
 	"time"
 )
 
@@ -9,6 +8,7 @@ const (
 	StatusRequest  = "request"
 	StatusAccepted = "accepted"
 	StatusDeclined = "declined"
+	StatusFinished = "finished"
 )
 
 type Call struct {
@@ -19,14 +19,6 @@ type Call struct {
 
 	Status string `bson:"status"`
 
-	// WebRTC data
-	WebRTC CallWebRTC `bson:"web_rtc"`
-
 	CreatedAt time.Time `bson:"created_at"`
 	UpdatedAt time.Time `bson:"updated_at"`
-}
-
-type CallWebRTC struct {
-	Offer  json.RawMessage `bson:"offer,omitempty"`
-	Answer json.RawMessage `bson:"answer,omitempty"`
 }
