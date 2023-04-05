@@ -1,0 +1,28 @@
+app:
+  development: $HARMONY_DEVELOPMENT
+
+logger:
+  level: info
+
+http:
+  address: $HARMONY_ADDRESS
+  read_timeout: 5m
+  write_timeout: 5m
+  idle_timeout: 5m
+  cors_allow_origins:
+    - $HARMONY_ORIGIN_1
+  cors_allow_credentials: true
+
+jwt:
+  issuer: harmony
+  lifetime: 720h # 31 days
+  private_key_path: ./config/secrets/jwt_private_key.pem
+
+mongo:
+  address: $HARMONY_MONGO_ADDRESS
+  direct: true
+  database: harmony
+
+centrifugo:
+  api_address: $HARMONY_CENTRIFUGO_ADDRESS
+  api_key: $HARMONY_CENTRIFUGO_API_KEY

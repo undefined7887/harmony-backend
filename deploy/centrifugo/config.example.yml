@@ -1,0 +1,40 @@
+# Server settings
+address: $CENTRIFUGO_HOST
+port: $CENTRIFUGO_PORT
+
+# API settings
+api_key: $CENTRIFUGO_API_KEY
+api_handler_prefix: /api
+
+# Client endpoints settings
+websocket_handler_prefix: /api/websocket
+
+# Admin settings
+admin: false
+
+# Channels settings
+allow_user_limited_channels: true
+
+# Proxy settings
+proxy_http_headers:
+  - "Origin"
+  - "User-Agent"
+  - "Cookie"
+  - "Authorization"
+  - "X-Real-Ip"
+  - "X-Forwarded-For"
+  - "X-Request-Id"
+
+allowed_origins:
+  - $CENTRIFUGO_ORIGIN_1
+
+proxy_connect_endpoint: $CENTRIFUGO_HARMONY_CONNECT_ENDPOINT
+proxy_refresh_endpoint: $CENTRIFUGO_HARMONY_REFRESH_ENDPOINT
+
+namespaces:
+  - name: chat
+    allow_subscribe_for_client: true
+  - name: user
+    allow_subscribe_for_client: true
+  - name: call
+    allow_subscribe_for_client: true
